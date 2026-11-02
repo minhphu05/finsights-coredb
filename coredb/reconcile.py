@@ -32,6 +32,15 @@ def _required_env(name: str) -> str:
     return value
 
 
+def _invoke_operations(operations: Operations, operations_list: list[Any]) -> None:
+    for operation in operations_list:
+        nested_operations = getattr(operation, "ops", None)
+        if nested_operations is not None:
+            _invoke_operations(operations, nested_operations)
+        else:
+            operations.invoke(operation)
+
+
 @contextmanager
 def _mysql_tls_hostname_resolution(connection: dict[str, Any]):
     tls_hostname = connection.get("tls_server_name")
@@ -178,8 +187,7 @@ def _mysql_apply(manifest: dict[str, Any]) -> None:
                     else:
                         LOG.info("Applying schema changes to %s", spec["name"])
                         operations = Operations(context)
-                        for operation in migration.upgrade_ops.ops:
-                            operations.invoke(operation)
+                        _invoke_operations(operations, migration.upgrade_ops.ops)
             finally:
                 engine.dispose()
 
@@ -291,8 +299,7 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
                         else:
                             LOG.info("Applying schema changes to PostgreSQL database %s", name)
                             operations = Operations(context)
-                            for operation in migration.upgrade_ops.ops:
-                                operations.invoke(operation)
+                            _invoke_operations(operations, migration.upgrade_ops.ops)
 
                     for role_spec in users.values():
                         if name not in role_spec.get("databases", []) or not schema_paths:
@@ -411,5 +418,5 @@ def _validate_target(manifest: dict[str, Any]) -> None:
             paths = [(ROOT / manifest["target"] / value).resolve() for value in database.get("schemas", [])]
             load_metadata(paths, engine_name="postgresql")
             owner = database.get("owner")
-            if owner and owner not in configured_users:
+            if owner and owner not in configured_user_names:
                 LOG.warning("Database %s will use the administrator as owner because %s is not configured", database["name"], owner)
