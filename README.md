@@ -10,7 +10,7 @@
 | `mysql-node-1/` | OCI MySQL Tokyo account | `finsights_assets`, `finsights_auth`, `finsights_market`, `finsights_news`, `finsights_user` |
 | `mysql-node-2/` | OCI MySQL Singapore account | `finsights_ai` |
 
-The MySQL target configs use the server addresses documented in `finsights-oracle-database`. Each GitHub Environment supplies its own `MYSQL_ADMIN_PASSWORD`, so Tokyo and Singapore can keep separate administrator credentials.
+The MySQL target configs use the server addresses documented in `finsights-oracle-database`. The workflow reads each node's existing, separately named repository secret so Tokyo and Singapore keep distinct administrator credentials. The endpoint CA certificates are public trust anchors tracked under each MySQL target.
 
 `finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. Separately, the PostgreSQL `auth_service` and `user_service` databases mirror the Prisma models in `Fizzisme/fiurozz-be` branch `develop`; they do not replace the MySQL databases. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
 
@@ -45,24 +45,30 @@ These drops are deliberate parts of the desired-state workflow. Review schema/co
 
 The workflow is `.github/workflows/reconcile.yml`. A change under one server folder deploys only that server. Changes to `coredb/`, `requirements.txt`, the deploy script, or the workflow trigger all three targets. `workflow_dispatch` runs all three.
 
-Create these GitHub Environments:
+Create these GitHub Environments to scope approvals or deployment protection:
 
-| Environment | Required environment secrets |
+| Environment | Workflow job |
 |---|---|
-| `coredb-postgres` | `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `USER_SERVICE_DB_PASSWORD` |
-| `coredb-mysql-node-1` | `MYSQL_ADMIN_PASSWORD`, `MYSQL_TLS_CA_PEM`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD` |
-| `coredb-mysql-node-2` | `MYSQL_ADMIN_PASSWORD`, `MYSQL_TLS_CA_PEM`, `MYSQL_AI_APP_PASSWORD` |
+| `coredb-postgres` | PostgreSQL initialization |
+| `coredb-mysql-node-1` | Tokyo MySQL initialization |
+| `coredb-mysql-node-2` | Singapore MySQL initialization |
 
-Set a different `MYSQL_ADMIN_PASSWORD` and the matching trusted `MYSQL_TLS_CA_PEM` value in each MySQL Environment. Add the optional environment variable `MYSQL_HOST` if the MySQL certificate is issued to a DNS name instead of the configured public IP; that name must resolve to the same MySQL endpoint. Add these repository secrets for the SSH connection to Node 1:
+Create these **repository secrets** with the exact names below. Existing secrets at repository scope are available to these jobs even though each job selects an Environment:
 
-- `FINSIGHTS_VPS_SSH_KEY`: the private key accepted by the Node 1 SSH service.
-- `FINSIGHTS_VPS_KNOWN_HOSTS`: the verified `known_hosts` entry for `103.249.117.232` on port `26567`.
+- PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `USER_SERVICE_DB_PASSWORD`.
+- MySQL Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
+- MySQL Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`.
+- SSH to Node 1: `FINSIGHTS_VPS_SSH_KEY` and `FINSIGHTS_VPS_KNOWN_HOSTS`.
+
+The checked-in MySQL CA certificates are public certificates, not passwords. The current MySQL endpoints present a certificate whose common name is `MySQL_Endpoint_Server` and has no IP subject alternative name. CoreDB verifies the TLS certificate against the per-endpoint CA file and verifies that common name while resolving it to the configured endpoint IP inside the CoreDB process. Refresh the corresponding CA file if OCI rotates that endpoint's certificate chain.
+
+The VPS jobs run sequentially and take a host lock because all three targets execute on Node 1. If Python's `venv` module is absent, `remote-apply.sh` installs only the matching `pythonX.Y-venv` OS package when running as root; it does not install a database service. This keeps the workflow's peak memory use low on the 8 GB VPS.
 
 The workflow runs the reconciler on Node 1 because the GitHub-hosted runner cannot resolve the Kubernetes service DNS or reach the MySQL ingress allowlist directly. Node 1 reaches PostgreSQL through the configured `30432` NodePort and reaches both MySQL endpoints. The SSH host and port are in the workflow file.
 
 ## Local use
 
-This working copy has an ignored `.env` with generated Dagster, auth-service, user-service, and application-account passwords. Add the existing PostgreSQL/MySQL administrator passwords and the trusted OCI MySQL CA file paths before local deployment. `.env.example` is the tracked template; keep `.env` out of Git. The PostgreSQL default uses Node 1's Tailscale IP and the NodePort from the PostgreSQL chart; set it to a route reachable from your machine if running locally. MySQL connects with TLS 1.2 or newer, CA verification, and hostname verification. If a certificate uses a DNS name, set the corresponding `MYSQL_NODE_1_HOST` or `MYSQL_NODE_2_HOST` to that name.
+For local deployment, the ignored `.env` contains the database passwords. `.env.example` is the tracked template; keep `.env` out of Git. The PostgreSQL default uses Node 1's Tailscale IP and the NodePort from the PostgreSQL chart; set it to a route reachable from your machine if running locally. MySQL uses TLS 1.2 or newer, validates the endpoint-specific CA, and verifies the server certificate name.
 
 ```bash
 python3 -m venv .venv

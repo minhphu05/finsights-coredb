@@ -3,7 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import re
+import socket
 import ssl
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -30,9 +32,32 @@ def _required_env(name: str) -> str:
     return value
 
 
+@contextmanager
+def _mysql_tls_hostname_resolution(connection: dict[str, Any]):
+    tls_hostname = connection.get("tls_server_name")
+    network_host = os.getenv(connection.get("host_env", "")) or connection.get("host", "")
+    if not tls_hostname or tls_hostname == network_host:
+        yield
+        return
+
+    original_getaddrinfo = socket.getaddrinfo
+
+    def mapped_getaddrinfo(host: Any, port: Any, *args: Any, **kwargs: Any):
+        resolved_host = network_host if host == tls_hostname else host
+        return original_getaddrinfo(resolved_host, port, *args, **kwargs)
+
+    socket.getaddrinfo = mapped_getaddrinfo
+    try:
+        yield
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
+
+
 def _url(connection: dict[str, Any], database: str | None = None, engine_name: str | None = None) -> URL:
     engine_name = engine_name or "mysql"
     host = os.getenv(connection.get("host_env", "")) or connection.get("host", "")
+    if engine_name == "mysql" and connection.get("tls_server_name"):
+        host = connection["tls_server_name"]
     port = int(os.getenv(connection.get("port_env", "")) or connection.get("port", 3306))
     username = connection.get("username") or _required_env(connection["username_env"])
     password = _required_env(connection["password_env"])
@@ -57,11 +82,14 @@ def _engine(manifest: dict[str, Any], database: str | None = None) -> Engine:
     if engine_name == "mysql" and manifest["connection"].get("tls") == "verify":
         context = ssl.create_default_context()
         ca_pem = os.getenv(manifest["connection"].get("tls_ca_pem_env", ""))
-        ca_file = os.getenv(manifest["connection"].get("tls_ca_file_env", ""))
+        ca_file = os.getenv(manifest["connection"].get("tls_ca_file_env", "")) or manifest["connection"].get("tls_ca_file", "")
         if ca_pem:
             context.load_verify_locations(cadata=ca_pem)
         elif ca_file:
-            context.load_verify_locations(cafile=ca_file)
+            ca_path = Path(ca_file)
+            if not ca_path.is_absolute():
+                ca_path = ROOT / ca_path
+            context.load_verify_locations(cafile=str(ca_path))
         else:
             raise ValueError("a MySQL TLS CA PEM or CA file path is required")
         context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -316,7 +344,8 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
 def apply_target(manifest: dict[str, Any]) -> None:
     _validate_target(manifest)
     if manifest["engine"] == "mysql":
-        _mysql_apply(manifest)
+        with _mysql_tls_hostname_resolution(manifest["connection"]):
+            _mysql_apply(manifest)
     elif manifest["engine"] == "postgresql":
         _pg_apply(manifest)
     else:
@@ -350,7 +379,7 @@ def _validate_target(manifest: dict[str, Any]) -> None:
         for name in database_names:
             if not name.startswith(prefix):
                 raise ValueError(f"managed MySQL database {name!r} must start with {prefix!r}")
-        if not (os.getenv(connection.get("tls_ca_pem_env", "")) or os.getenv(connection.get("tls_ca_file_env", ""))):
+        if not (os.getenv(connection.get("tls_ca_pem_env", "")) or os.getenv(connection.get("tls_ca_file_env", "")) or connection.get("tls_ca_file")):
             raise ValueError("a MySQL TLS CA PEM or CA file path is required")
         for spec in databases:
             paths = [(ROOT / manifest["target"] / value).resolve() for value in spec.get("schemas", [])]

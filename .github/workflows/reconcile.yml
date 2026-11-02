@@ -51,8 +51,8 @@ jobs:
       - run: bash scripts/remote-apply.sh postgres
 
   mysql-node-1:
-    needs: changes
-    if: needs.changes.outputs.mysql_node_1 == 'true'
+    needs: [changes, postgres]
+    if: ${{ always() && needs.changes.outputs.mysql_node_1 == 'true' }}
     runs-on: ubuntu-latest
     environment: coredb-mysql-node-1
     timeout-minutes: 20
@@ -60,9 +60,7 @@ jobs:
       FINSIGHTS_VPS_HOST: 103.249.117.232
       FINSIGHTS_VPS_PORT: "26567"
       FINSIGHTS_VPS_USER: root
-      MYSQL_NODE_1_ADMIN_PASSWORD: ${{ secrets.MYSQL_ADMIN_PASSWORD }}
-      MYSQL_NODE_1_TLS_CA_PEM: ${{ secrets.MYSQL_TLS_CA_PEM }}
-      MYSQL_NODE_1_HOST: ${{ vars.MYSQL_HOST }}
+      MYSQL_NODE_1_ADMIN_PASSWORD: ${{ secrets.MYSQL_NODE_1_ADMIN_PASSWORD }}
       MYSQL_ASSETS_APP_PASSWORD: ${{ secrets.MYSQL_ASSETS_APP_PASSWORD }}
       MYSQL_AUTH_APP_PASSWORD: ${{ secrets.MYSQL_AUTH_APP_PASSWORD }}
       MYSQL_MARKET_APP_PASSWORD: ${{ secrets.MYSQL_MARKET_APP_PASSWORD }}
@@ -78,8 +76,8 @@ jobs:
       - run: bash scripts/remote-apply.sh mysql-node-1
 
   mysql-node-2:
-    needs: changes
-    if: needs.changes.outputs.mysql_node_2 == 'true'
+    needs: [changes, mysql-node-1]
+    if: ${{ always() && needs.changes.outputs.mysql_node_2 == 'true' }}
     runs-on: ubuntu-latest
     environment: coredb-mysql-node-2
     timeout-minutes: 20
@@ -87,9 +85,7 @@ jobs:
       FINSIGHTS_VPS_HOST: 103.249.117.232
       FINSIGHTS_VPS_PORT: "26567"
       FINSIGHTS_VPS_USER: root
-      MYSQL_NODE_2_ADMIN_PASSWORD: ${{ secrets.MYSQL_ADMIN_PASSWORD }}
-      MYSQL_NODE_2_TLS_CA_PEM: ${{ secrets.MYSQL_TLS_CA_PEM }}
-      MYSQL_NODE_2_HOST: ${{ vars.MYSQL_HOST }}
+      MYSQL_NODE_2_ADMIN_PASSWORD: ${{ secrets.MYSQL_NODE_2_ADMIN_PASSWORD }}
       MYSQL_AI_APP_PASSWORD: ${{ secrets.MYSQL_AI_APP_PASSWORD }}
       FINSIGHTS_VPS_SSH_KEY: ${{ secrets.FINSIGHTS_VPS_SSH_KEY }}
       FINSIGHTS_VPS_KNOWN_HOSTS: ${{ secrets.FINSIGHTS_VPS_KNOWN_HOSTS }}

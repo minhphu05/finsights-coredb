@@ -10,12 +10,12 @@ case "$target" in
     optional_keys="POSTGRES_HOST,POSTGRES_PORT"
     ;;
   mysql-node-1)
-    secret_keys="MYSQL_NODE_1_ADMIN_PASSWORD,MYSQL_NODE_1_TLS_CA_PEM,MYSQL_ASSETS_APP_PASSWORD,MYSQL_AUTH_APP_PASSWORD,MYSQL_MARKET_APP_PASSWORD,MYSQL_NEWS_APP_PASSWORD,MYSQL_USER_APP_PASSWORD"
-    optional_keys="MYSQL_NODE_1_HOST"
+    secret_keys="MYSQL_NODE_1_ADMIN_PASSWORD,MYSQL_ASSETS_APP_PASSWORD,MYSQL_AUTH_APP_PASSWORD,MYSQL_MARKET_APP_PASSWORD,MYSQL_NEWS_APP_PASSWORD,MYSQL_USER_APP_PASSWORD"
+    optional_keys=""
     ;;
   mysql-node-2)
-    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_NODE_2_TLS_CA_PEM,MYSQL_AI_APP_PASSWORD"
-    optional_keys="MYSQL_NODE_2_HOST"
+    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_AI_APP_PASSWORD"
+    optional_keys=""
     ;;
   *)
     echo "Unsupported database target: $target" >&2
@@ -69,9 +69,20 @@ set -euo pipefail
 remote_dir="$1"
 target="$2"
 trap 'rm -rf "$remote_dir"' EXIT
+exec 9>/var/lock/finsights-coredb.lock
+flock 9
 chmod 600 "$remote_dir/secrets.json"
 tar -xzf "$remote_dir/repo.tgz" -C "$remote_dir"
 cd "$remote_dir"
+if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
+  if ! command -v apt-get >/dev/null 2>&1 || [[ "$(id -u)" -ne 0 ]]; then
+    echo "Python venv support is missing; install the matching pythonX.Y-venv package as root." >&2
+    exit 1
+  fi
+  python_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y "python${python_version}-venv"
+fi
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check --quiet -r requirements.txt
 .venv/bin/python -m coredb.cli apply --target "$target" --secrets-file "$remote_dir/secrets.json"
