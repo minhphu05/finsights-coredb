@@ -266,23 +266,15 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
             engine = _engine(manifest, database=name)
             try:
                 with engine.begin() as conn:
-                    for old_owner_name in spec.get("reassign_owned_from", []):
+                    for old_owner_name in spec.get("reassign_public_tables_from", []):
                         if old_owner_name == spec.get("owner"):
                             continue
                         LOG.info(
-                            "Reassigning PostgreSQL objects in %s from %s to %s",
+                            "Reassigning PostgreSQL public tables in %s from %s to %s",
                             name,
                             old_owner_name,
                             spec["owner"],
                         )
-                        _pg_exec(
-                            conn,
-                            sql.SQL("REASSIGN OWNED BY {} TO {}").format(
-                                _pg_identifier(old_owner_name),
-                                _pg_identifier(spec["owner"]),
-                            ),
-                        )
-
                     for role_spec in users.values():
                         if name not in role_spec.get("databases", []):
                             continue
@@ -297,6 +289,39 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
                                 role,
                             ))
                             _pg_exec(conn, sql.SQL("GRANT USAGE, CREATE ON SCHEMA public TO {}").format(role))
+
+                    owner = _pg_identifier(spec["owner"])
+                    for old_owner_name in spec.get("reassign_public_tables_from", []):
+                        tables = conn.exec_driver_sql(
+                            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tableowner = %s",
+                            (old_owner_name,),
+                        ).all()
+                        for (table_name,) in tables:
+                            _pg_exec(
+                                conn,
+                                sql.SQL("ALTER TABLE {}.{} OWNER TO {}").format(
+                                    sql.Identifier("public"),
+                                    sql.Identifier(table_name),
+                                    owner,
+                                ),
+                            )
+
+                        sequences = conn.exec_driver_sql(
+                            "SELECT c.relname FROM pg_class c "
+                            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                            "JOIN pg_roles r ON r.oid = c.relowner "
+                            "WHERE c.relkind = 'S' AND n.nspname = 'public' AND r.rolname = %s",
+                            (old_owner_name,),
+                        ).all()
+                        for (sequence_name,) in sequences:
+                            _pg_exec(
+                                conn,
+                                sql.SQL("ALTER SEQUENCE {}.{} OWNER TO {}").format(
+                                    sql.Identifier("public"),
+                                    sql.Identifier(sequence_name),
+                                    owner,
+                                ),
+                            )
 
                     if schema_paths:
                         def include_object(obj: Any, object_name: str, kind: str, reflected: bool, compare_to: Any) -> bool:

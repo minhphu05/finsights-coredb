@@ -14,7 +14,7 @@ The MySQL target configs use the server addresses documented in `finsights-oracl
 
 `finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
 
-PostgreSQL is reserved for platform tools. The initial managed database is `dagster`, owned by the login role `dagster_admin`; CoreDB does not declare Dagster's internal tables because Dagster creates and migrates those itself. The config transfers ownership of existing Dagster tables from `postgres` to `dagster_admin` so the application can keep its current run and event history while using the dedicated login.
+PostgreSQL is reserved for platform tools. The initial managed database is `dagster`, owned by the login role `dagster_admin`; CoreDB does not declare Dagster's internal tables because Dagster creates and migrates those itself. The config transfers ownership of existing tables and sequences in Dagster's `public` schema from `postgres` to `dagster_admin` so the application can keep its current run and event history while using the dedicated login.
 
 The current backend DSNs map to these Node 1 accounts:
 

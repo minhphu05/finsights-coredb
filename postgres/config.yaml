@@ -18,7 +18,7 @@ databases:
     owner: dagster_admin
     drop_missing_tables: false
     schemas: []
-    reassign_owned_from:
+    reassign_public_tables_from:
       - postgres
 users:
   - name: dagster_admin
