@@ -325,7 +325,7 @@
             "exchange_id",
             "symbol"
           ],
-          "unique": false
+          "unique": true
         },
         {
           "columns": [
@@ -337,6 +337,113 @@
         {
           "columns": [
             "isin"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_security_aliases",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "alias_text",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "alias_normalized",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "alias_type",
+          "type": "varchar(32)",
+          "nullable": false
+        },
+        {
+          "name": "language_code",
+          "type": "varchar(8)",
+          "nullable": false,
+          "default": "vi"
+        },
+        {
+          "name": "match_mode",
+          "type": "varchar(20)",
+          "nullable": false,
+          "default": "phrase"
+        },
+        {
+          "name": "requires_financial_context",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "confidence",
+          "type": "decimal(5,4)",
+          "nullable": false,
+          "default": 1.0
+        },
+        {
+          "name": "effective_from",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "effective_to",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "alias_normalized",
+            "is_active"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "security_id",
+            "alias_type",
+            "is_active"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "effective_from",
+            "effective_to"
           ],
           "unique": false
         }
@@ -643,6 +750,83 @@
       "indexes": []
     },
     {
+      "name": "market_index_snapshots",
+      "columns": [
+        {
+          "name": "index_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "market_indices",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "observed_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "index_value",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "change_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "total_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "turnover_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "raw_fields_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "captured_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "observed_at",
+            "index_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
       "name": "market_index_prices_daily",
       "columns": [
         {
@@ -848,6 +1032,205 @@
         {
           "columns": [
             "quote_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_quote_snapshots",
+      "columns": [
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "market_securities",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "quoted_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "reference_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ceiling_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "floor_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "bid_price_1_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "bid_volume_1",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "bid_price_2_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "bid_volume_2",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "bid_price_3_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "bid_volume_3",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "last_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "matched_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "change_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "ask_price_1_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ask_volume_1",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "ask_price_2_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ask_volume_2",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "ask_price_3_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ask_volume_3",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "total_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "high_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "low_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "average_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "foreign_buy_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "foreign_sell_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "total_turnover_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "market_state",
+          "type": "varchar(24)",
+          "nullable": true
+        },
+        {
+          "name": "is_delayed",
+          "type": "boolean",
+          "nullable": true
+        },
+        {
+          "name": "raw_fields_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "captured_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "quoted_at",
+            "security_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "provider_id",
+            "quoted_at"
           ],
           "unique": false
         }

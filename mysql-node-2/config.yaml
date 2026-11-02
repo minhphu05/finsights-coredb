@@ -19,9 +19,17 @@ databases:
   - name: finsights_ai
     schemas:
       - schemas/ai.json
+  - name: finsights_scraping
+    schemas:
+      - schemas/scraping.json
 users:
   - name: finsights_ai_app
     host: "%"
     password_env: MYSQL_AI_APP_PASSWORD
     database: finsights_ai
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_scraping_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_scraping
     privileges: [SELECT, INSERT, UPDATE, DELETE]

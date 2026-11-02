@@ -8,9 +8,11 @@
 |---|---|---|
 | `postgres/` | PostgreSQL in the Kubernetes tools stack | `dagster` |
 | `mysql-node-1/` | OCI MySQL Tokyo account | `finsights_assets`, `finsights_auth`, `finsights_market`, `finsights_news`, `finsights_user` |
-| `mysql-node-2/` | OCI MySQL Singapore account | `finsights_ai` |
+| `mysql-node-2/` | OCI MySQL Singapore account | `finsights_ai`, `finsights_scraping` |
 
 The MySQL target configs use the server addresses documented in `finsights-oracle-database`. The workflow reads each node's existing, separately named repository secret so Tokyo and Singapore keep distinct administrator credentials. The endpoint CA certificates are public trust anchors tracked under each MySQL target.
+
+`finsights_scraping` on Node 2 contains scrape audit metadata only: Dagster runs, date windows, stable source-item identities, per-run outcomes, HTTP fetch attempts, and source checkpoints. Article text/media and market facts belong in the Node 1 `finsights_news`, `finsights_market`, and `finsights_assets` databases. Scraper workers use `finsights_scraping_app` to persist run and item audit logs.
 
 `finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
 
@@ -52,7 +54,7 @@ Create these **repository secrets** with the exact names below. Existing secrets
 
 - PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`.
 - MySQL Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
-- MySQL Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`.
+- MySQL Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
 - SSH to Node 1: `FINSIGHTS_VPS_SSH_KEY` and `FINSIGHTS_VPS_KNOWN_HOSTS`.
 
 The checked-in MySQL CA certificates are public certificates, not passwords. The current MySQL endpoints present a certificate whose common name is `MySQL_Endpoint_Server` and has no IP subject alternative name. CoreDB verifies the TLS certificate against the per-endpoint CA file and verifies that common name while resolving it to the configured endpoint IP inside the CoreDB process. Refresh the corresponding CA file if OCI rotates that endpoint's certificate chain.

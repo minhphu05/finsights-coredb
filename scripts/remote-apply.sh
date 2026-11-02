@@ -14,7 +14,7 @@ case "$target" in
     optional_keys=""
     ;;
   mysql-node-2)
-    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_AI_APP_PASSWORD"
+    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_AI_APP_PASSWORD,MYSQL_SCRAPING_APP_PASSWORD"
     optional_keys=""
     ;;
   *)

@@ -1,0 +1,605 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "scrape_sources",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "source_kind",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "base_url",
+          "type": "varchar(512)",
+          "nullable": false
+        },
+        {
+          "name": "timezone",
+          "type": "varchar(48)",
+          "nullable": false,
+          "default": "Asia/Ho_Chi_Minh"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "rate_limit_rps",
+          "type": "decimal(5,3)",
+          "nullable": false,
+          "default": 0.5
+        },
+        {
+          "name": "config_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_kind"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "is_active"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "scrape_runs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "dagster_run_id",
+          "type": "varchar(64)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "job_name",
+          "type": "varchar(128)",
+          "nullable": false
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "scrape_sources",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "STARTED"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "finished_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "items_discovered",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_fetched",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_persisted",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_duplicate",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_out_of_range",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_rejected",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "items_failed",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "error_summary",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "duration_ms",
+          "type": "bigint",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_id",
+            "started_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "source_id",
+            "start_date",
+            "end_date"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "status",
+            "started_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "scrape_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "scrape_sources",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "item_kind",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "identity_sha256",
+          "type": "char(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_item_id",
+          "type": "varchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "canonical_url",
+          "type": "varchar(2048)",
+          "nullable": false
+        },
+        {
+          "name": "canonical_url_sha256",
+          "type": "char(64)",
+          "nullable": false
+        },
+        {
+          "name": "published_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "business_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "content_fingerprint_sha256",
+          "type": "char(64)",
+          "nullable": true
+        },
+        {
+          "name": "destination_domain",
+          "type": "varchar(24)",
+          "nullable": true
+        },
+        {
+          "name": "destination_database",
+          "type": "varchar(64)",
+          "nullable": true
+        },
+        {
+          "name": "destination_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "first_seen_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "last_seen_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "last_run_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "scrape_runs",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "last_outcome",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "DISCOVERED"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_id",
+            "identity_sha256"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "source_id",
+            "source_item_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "source_id",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "destination_domain",
+            "destination_uid"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "scrape_run_items",
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "scrape_runs",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "item_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "scrape_items",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "outcome",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "discovered_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "processed_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "error_code",
+          "type": "varchar(64)",
+          "nullable": true
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "item_id",
+            "run_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "outcome",
+            "processed_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "scrape_fetch_attempts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "run_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "scrape_runs",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "scrape_sources",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "resource_kind",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "resource_url",
+          "type": "varchar(2048)",
+          "nullable": false
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "attempt_number",
+          "type": "smallint",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "requested_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "http_status",
+          "type": "smallint",
+          "nullable": true
+        },
+        {
+          "name": "response_content_type",
+          "type": "varchar(160)",
+          "nullable": true
+        },
+        {
+          "name": "response_size_bytes",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "response_sha256",
+          "type": "char(64)",
+          "nullable": true
+        },
+        {
+          "name": "duration_ms",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "outcome",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "error_type",
+          "type": "varchar(80)",
+          "nullable": true
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "run_id",
+            "requested_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "source_id",
+            "resource_kind",
+            "requested_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "http_status"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "scrape_checkpoints",
+      "columns": [
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "scrape_sources",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "checkpoint_key",
+          "type": "varchar(96)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "checkpoint_value",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "updated_at"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}
