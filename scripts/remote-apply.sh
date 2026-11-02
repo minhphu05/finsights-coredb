@@ -6,7 +6,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 case "$target" in
   postgres)
-    secret_keys="POSTGRES_ADMIN_PASSWORD,DAGSTER_DB_PASSWORD,AUTH_SERVICE_DB_PASSWORD,USER_SERVICE_DB_PASSWORD"
+    secret_keys="POSTGRES_ADMIN_PASSWORD,DAGSTER_DB_PASSWORD"
     optional_keys="POSTGRES_HOST,POSTGRES_PORT"
     ;;
   mysql-node-1)
@@ -86,4 +86,23 @@ fi
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check --quiet -r requirements.txt
 .venv/bin/python -m coredb.cli apply --target "$target" --secrets-file "$remote_dir/secrets.json"
+if [[ "$target" == "postgres" ]]; then
+  secret_path="$remote_dir/dagster-postgresql-password"
+  .venv/bin/python - "$remote_dir/secrets.json" "$secret_path" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+secrets = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+password = secrets["DAGSTER_DB_PASSWORD"]
+secret_path = Path(sys.argv[2])
+secret_path.write_text(password, encoding="utf-8")
+secret_path.chmod(0o600)
+PY
+  kubectl -n orchestration create secret generic dagster-admin-postgresql-secret \
+    --from-file=postgresql-password="$secret_path" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  rm -f "$secret_path"
+fi
 REMOTE

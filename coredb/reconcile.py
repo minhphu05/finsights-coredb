@@ -12,6 +12,7 @@ from typing import Any
 from alembic.autogenerate import produce_migrations
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
+from psycopg import connect
 from psycopg import sql
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL, Engine
@@ -224,6 +225,7 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
         with admin.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             for name, user in users.items():
                 password = _required_env(user["password_env"])
+                LOG.info("Ensuring PostgreSQL role %s", name)
                 exists = conn.exec_driver_sql("SELECT 1 FROM pg_roles WHERE rolname = %s", (name,)).first()
                 role = _pg_identifier(name)
                 if exists:
@@ -238,6 +240,7 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
                 exists = conn.exec_driver_sql("SELECT 1 FROM pg_database WHERE datname = %s", (name,)).first()
                 owner_name = spec.get("owner")
                 owner_name = owner_name if owner_name in users else manifest["connection"]["username"]
+                LOG.info("Ensuring PostgreSQL database %s owned by %s", name, owner_name)
                 owner = _pg_identifier(owner_name)
                 if exists:
                     _pg_exec(conn, sql.SQL("ALTER DATABASE {} OWNER TO {}").format(database, owner))
@@ -263,6 +266,23 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
             engine = _engine(manifest, database=name)
             try:
                 with engine.begin() as conn:
+                    for old_owner_name in spec.get("reassign_owned_from", []):
+                        if old_owner_name == spec.get("owner"):
+                            continue
+                        LOG.info(
+                            "Reassigning PostgreSQL objects in %s from %s to %s",
+                            name,
+                            old_owner_name,
+                            spec["owner"],
+                        )
+                        _pg_exec(
+                            conn,
+                            sql.SQL("REASSIGN OWNED BY {} TO {}").format(
+                                _pg_identifier(old_owner_name),
+                                _pg_identifier(spec["owner"]),
+                            ),
+                        )
+
                     for role_spec in users.values():
                         if name not in role_spec.get("databases", []):
                             continue
@@ -346,6 +366,22 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
                         engine.dispose()
                 conn.exec_driver_sql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = %s AND pid <> pg_backend_pid()", (name,))
                 _pg_exec(conn, sql.SQL("DROP ROLE {}").format(role))
+
+        host = os.getenv(manifest["connection"].get("host_env", "")) or manifest["connection"].get("host", "")
+        port = int(os.getenv(manifest["connection"].get("port_env", "")) or manifest["connection"].get("port", 5432))
+        for user in users.values():
+            for database in user.get("databases", []):
+                LOG.info("Verifying PostgreSQL login for %s on %s", user["name"], database)
+                with connect(
+                    host=host,
+                    port=port,
+                    dbname=database,
+                    user=user["name"],
+                    password=_required_env(user["password_env"]),
+                    sslmode=manifest["connection"].get("sslmode", "prefer"),
+                    connect_timeout=int(manifest["connection"].get("connect_timeout", 10)),
+                ):
+                    pass
     finally:
         admin.dispose()
 

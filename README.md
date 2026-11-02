@@ -6,20 +6,15 @@
 
 | Folder | Server | Managed databases |
 |---|---|---|
-| `postgres/` | PostgreSQL in the Kubernetes tools stack | `dagster`, `auth_service`, `user_service` |
+| `postgres/` | PostgreSQL in the Kubernetes tools stack | `dagster` |
 | `mysql-node-1/` | OCI MySQL Tokyo account | `finsights_assets`, `finsights_auth`, `finsights_market`, `finsights_news`, `finsights_user` |
 | `mysql-node-2/` | OCI MySQL Singapore account | `finsights_ai` |
 
 The MySQL target configs use the server addresses documented in `finsights-oracle-database`. The workflow reads each node's existing, separately named repository secret so Tokyo and Singapore keep distinct administrator credentials. The endpoint CA certificates are public trust anchors tracked under each MySQL target.
 
-`finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. Separately, the PostgreSQL `auth_service` and `user_service` databases mirror the Prisma models in `Fizzisme/fiurozz-be` branch `develop`; they do not replace the MySQL databases. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
+`finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
 
-`postgres/schemas/auth-service.json` mirrors [`auth-service/prisma/schema.prisma`](https://github.com/Fizzisme/fiurozz-be/blob/develop/auth-service/prisma/schema.prisma), and `postgres/schemas/user-service.json` mirrors [`user-service/prisma/schema.prisma`](https://github.com/Fizzisme/fiurozz-be/blob/develop/user-service/prisma/schema.prisma) from `Fizzisme/fiurozz-be` branch `develop`. They define the service tables, PostgreSQL enums, UUID relationships, indexes, and cascade deletes. The databases are owned by `auth_service_app` and `user_service_app`, with separate passwords. `dagster` remains dedicated to Dagster and is not schema-managed by CoreDB.
-
-| Service | PostgreSQL database | Login role | GitHub Environment secret |
-|---|---|---|---|
-| auth-service | `auth_service` | `auth_service_app` | `AUTH_SERVICE_DB_PASSWORD` |
-| user-service | `user_service` | `user_service_app` | `USER_SERVICE_DB_PASSWORD` |
+PostgreSQL is reserved for platform tools. The initial managed database is `dagster`, owned by the login role `dagster_admin`; CoreDB does not declare Dagster's internal tables because Dagster creates and migrates those itself. The config transfers ownership of existing Dagster tables from `postgres` to `dagster_admin` so the application can keep its current run and event history while using the dedicated login.
 
 The current backend DSNs map to these Node 1 accounts:
 
@@ -37,7 +32,7 @@ The JSON schema files are the desired state. Add or edit a table/column/index th
 
 On MySQL, all databases starting with `finsights_` are in this repo's ownership scope. A database removed from that target's `config.yaml` is dropped. Remove its application user from `users` at the same time. Users starting with `finsights_` are also reconciled: a user removed from `users` is dropped. The MySQL account `finsightsadmin` does not match this prefix and is never managed by the workflow. Use the `finsights_` namespace only for objects that this repo owns.
 
-On PostgreSQL, database and role comments mark objects owned by this repo. Removing a marked database or role from `postgres/config.yaml` drops it; remove a service database and its role together. The service database schemas set `drop_missing_tables: true`, so removing a table from their JSON drops it and its rows. Removing a column also drops its data. Dagster sets `drop_missing_tables: false` and has no schema JSON, so this repo does not prune tables inside `dagster`.
+On PostgreSQL, database and role comments mark objects owned by this repo. Removing a marked database or role from `postgres/config.yaml` drops it. Dagster sets `drop_missing_tables: false` and has no schema JSON, so this repo does not prune Dagster's tables.
 
 These drops are deliberate parts of the desired-state workflow. Review schema/config changes before merging them to `main`.
 
@@ -55,7 +50,7 @@ Create these GitHub Environments to scope approvals or deployment protection:
 
 Create these **repository secrets** with the exact names below. Existing secrets at repository scope are available to these jobs even though each job selects an Environment:
 
-- PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `USER_SERVICE_DB_PASSWORD`.
+- PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`.
 - MySQL Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
 - MySQL Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`.
 - SSH to Node 1: `FINSIGHTS_VPS_SSH_KEY` and `FINSIGHTS_VPS_KNOWN_HOSTS`.
@@ -64,7 +59,7 @@ The checked-in MySQL CA certificates are public certificates, not passwords. The
 
 The VPS jobs run sequentially and take a host lock because all three targets execute on Node 1. If Python's `venv` module is absent, `remote-apply.sh` installs only the matching `pythonX.Y-venv` OS package when running as root; it does not install a database service. This keeps the workflow's peak memory use low on the 8 GB VPS.
 
-The workflow runs the reconciler on Node 1 because the GitHub-hosted runner cannot resolve the Kubernetes service DNS or reach the MySQL ingress allowlist directly. Node 1 reaches PostgreSQL through the configured `30432` NodePort and reaches both MySQL endpoints. The SSH host and port are in the workflow file.
+The workflow runs the reconciler on Node 1 because the GitHub-hosted runner cannot resolve the Kubernetes service DNS or reach the MySQL ingress allowlist directly. Node 1 reaches PostgreSQL through the configured `30432` NodePort and reaches both MySQL endpoints. For PostgreSQL, it also syncs `DAGSTER_DB_PASSWORD` into the Kubernetes secret `orchestration/dagster-admin-postgresql-secret` without logging the value. The Dagster chart uses that secret with `dagster_admin`. The SSH host and port are in the workflow file.
 
 ## Local use
 
@@ -81,6 +76,4 @@ Use `--target postgres` or `--target mysql-node-2` for the other servers. The lo
 
 ## PostgreSQL deployment alignment
 
-The current Dagster values in `finsights-platform-deployment` still configure `tools_admin`. This repo creates `dagster_admin` as requested. Update the Dagster chart values/secret to use `dagster_admin` and the same `DAGSTER_DB_PASSWORD` before relying on the new credentials; this repo does not edit the deployment repo.
-
-The Fiurozz services currently document `npx prisma migrate deploy`. Do not run that against databases after CoreDB has created these tables: Prisma will see no applied migration history and its first migration may fail because the tables already exist. Choose one schema owner before deployment. With the current config, CoreDB owns the table structure; update the service deployment/run instructions to skip `migrate deploy` for these databases (Prisma Client generation is still needed). If Prisma Migrate should remain the owner instead, remove the table schemas from CoreDB and let service migrations reconcile the tables.
+The Dagster chart uses database `dagster`, login role `dagster_admin`, and the Kubernetes secret synchronized by the PostgreSQL workflow. Dagster owns its internal schema migrations; CoreDB provisions the database and credentials, then leaves table creation and upgrades to Dagster.
