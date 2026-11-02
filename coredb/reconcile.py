@@ -117,7 +117,9 @@ def _mysql_account(user: str, host: str) -> str:
         raise ValueError(f"invalid MySQL username {user!r}")
     if not re.fullmatch(r"[%A-Za-z0-9_.:-]+", host):
         raise ValueError(f"invalid MySQL account host {host!r}")
-    return "'" + user.replace("'", "''") + "'@'" + host.replace("'", "''") + "'"
+    # PyMySQL treats percent signs in a statement as interpolation markers.
+    sql_host = host.replace("%", "%%")
+    return "'" + user.replace("'", "''") + "'@'" + sql_host.replace("'", "''") + "'"
 
 
 def _mysql_drop_missing_databases(conn: Any, manifest: dict[str, Any]) -> None:
