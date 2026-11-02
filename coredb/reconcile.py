@@ -33,13 +33,62 @@ def _required_env(name: str) -> str:
     return value
 
 
-def _invoke_operations(operations: Operations, operations_list: list[Any]) -> None:
+def _operation_priority(operation: Any) -> int:
+    name = type(operation).__name__
+    if "Table" in name and "Create" in name:
+        return 10
+    if "Column" in name and "Add" in name:
+        return 20
+    if "Index" in name and "Create" in name:
+        return 30
+    if "Constraint" in name and "Create" in name:
+        return 40
+    if "ForeignKey" in name and "Create" in name:
+        return 50
+    if "Alter" in name or "Modify" in name:
+        return 60
+    if "ForeignKey" in name and "Drop" in name:
+        return 70
+    if "Constraint" in name and "Drop" in name:
+        return 80
+    if "Index" in name and "Drop" in name:
+        return 90
+    if "Column" in name and "Drop" in name:
+        return 100
+    if "Table" in name and "Drop" in name:
+        return 110
+    return 60
+
+
+def _flatten_operations(operations_list: list[Any]) -> list[Any]:
+    flat: list[Any] = []
     for operation in operations_list:
         nested_operations = getattr(operation, "ops", None)
         if nested_operations is not None:
-            _invoke_operations(operations, nested_operations)
+            flat.extend(_flatten_operations(nested_operations))
         else:
+            flat.append(operation)
+    return flat
+
+
+def _invoke_operations(operations: Operations, operations_list: list[Any]) -> None:
+    flat_ops = _flatten_operations(operations_list)
+    sorted_ops = sorted(flat_ops, key=_operation_priority)
+    for operation in sorted_ops:
+        try:
             operations.invoke(operation)
+        except Exception as exc:
+            # Handle MySQL error 1553 when dropping an index needed by a foreign key constraint
+            err_str = str(exc)
+            if ("1553" in err_str or "foreign key constraint" in err_str.lower()) and "DropIndex" in type(operation).__name__:
+                index_name = getattr(operation, "index_name", str(operation))
+                LOG.warning(
+                    "Skipping dropping index %s because it is required by a foreign key constraint: %s",
+                    index_name,
+                    exc,
+                )
+                continue
+            raise
 
 
 @contextmanager

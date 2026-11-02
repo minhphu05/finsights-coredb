@@ -322,6 +322,12 @@
       "indexes": [
         {
           "columns": [
+            "exchange_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
             "exchange_id",
             "symbol"
           ],
