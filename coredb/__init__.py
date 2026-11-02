@@ -1,0 +1,1 @@
+"""Declarative Finsights database initialization."""

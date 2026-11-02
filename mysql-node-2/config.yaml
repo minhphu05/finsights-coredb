@@ -1,0 +1,28 @@
+version: 1
+target: mysql-node-2
+engine: mysql
+connection:
+  host: 129.221.137.201
+  host_env: MYSQL_NODE_2_HOST
+  port: 3306
+  database: mysql
+  username: finsightsadmin
+  password_env: MYSQL_NODE_2_ADMIN_PASSWORD
+  tls: verify
+  tls_ca_pem_env: MYSQL_NODE_2_TLS_CA_PEM
+  tls_ca_file_env: MYSQL_NODE_2_TLS_CA_FILE
+  connect_timeout: 10
+managed_database_prefix: finsights_
+managed_user_prefix: finsights_
+database_charset: utf8mb4
+database_collation: utf8mb4_unicode_ci
+databases:
+  - name: finsights_ai
+    schemas:
+      - schemas/ai.json
+users:
+  - name: finsights_ai_app
+    host: "%"
+    password_env: MYSQL_AI_APP_PASSWORD
+    database: finsights_ai
+    privileges: [SELECT, INSERT, UPDATE, DELETE]

@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(120)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "watchlist_symbols",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "account_id",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+version: 1
+target: postgres
+engine: postgresql
+connection:
+  host: 100.96.150.92
+  host_env: POSTGRES_HOST
+  port: 30432
+  port_env: POSTGRES_PORT
+  database: postgres
+  username: postgres
+  password_env: POSTGRES_ADMIN_PASSWORD
+  sslmode: prefer
+  connect_timeout: 10
+managed_database_comment: "managed-by=finsights-coredb:postgres"
+managed_role_comment_prefix: "managed-by=finsights-coredb:postgres:"
+databases:
+  - name: dagster
+    owner: dagster_admin
+    drop_missing_tables: false
+    schemas: []
+  - name: auth_service
+    owner: auth_service_app
+    drop_missing_tables: true
+    schemas:
+      - schemas/auth-service.json
+  - name: user_service
+    owner: user_service_app
+    drop_missing_tables: true
+    schemas:
+      - schemas/user-service.json
+users:
+  - name: dagster_admin
+    password_env: DAGSTER_DB_PASSWORD
+    databases:
+      - dagster
+    privileges:
+      - CONNECT
+      - CREATE
+      - TEMPORARY
+  - name: auth_service_app
+    password_env: AUTH_SERVICE_DB_PASSWORD
+    databases:
+      - auth_service
+    privileges:
+      - CONNECT
+      - CREATE
+      - TEMPORARY
+  - name: user_service_app
+    password_env: USER_SERVICE_DB_PASSWORD
+    databases:
+      - user_service
+    privileges:
+      - CONNECT
+      - CREATE
+      - TEMPORARY

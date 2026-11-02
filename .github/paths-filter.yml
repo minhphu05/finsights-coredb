@@ -1,0 +1,21 @@
+postgres:
+  - "postgres/**"
+  - "coredb/**"
+  - "requirements.txt"
+  - "scripts/remote-apply.sh"
+  - ".github/workflows/**"
+  - ".github/paths-filter.yml"
+mysql_node_1:
+  - "mysql-node-1/**"
+  - "coredb/**"
+  - "requirements.txt"
+  - "scripts/remote-apply.sh"
+  - ".github/workflows/**"
+  - ".github/paths-filter.yml"
+mysql_node_2:
+  - "mysql-node-2/**"
+  - "coredb/**"
+  - "requirements.txt"
+  - "scripts/remote-apply.sh"
+  - ".github/workflows/**"
+  - ".github/paths-filter.yml"

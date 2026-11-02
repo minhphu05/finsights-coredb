@@ -1,0 +1,1580 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "market_exchanges",
+      "columns": [
+        {
+          "name": "id",
+          "type": "smallint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "code",
+          "type": "varchar(20)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "timezone",
+          "type": "varchar(60)",
+          "nullable": false,
+          "default": "Asia/Ho_Chi_Minh"
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": false,
+          "default": "VND"
+        },
+        {
+          "name": "website_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "market_industries",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "parent_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_industries",
+            "column": "id"
+          }
+        },
+        {
+          "name": "taxonomy",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": "varchar(48)",
+          "nullable": false
+        },
+        {
+          "name": "name_vi",
+          "type": "varchar(220)",
+          "nullable": false
+        },
+        {
+          "name": "name_en",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "level_no",
+          "type": "smallint",
+          "nullable": false,
+          "default": 1
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "taxonomy",
+            "code"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    {
+      "name": "market_companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "company_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "legal_name",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "short_name",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "english_name",
+          "type": "varchar(320)",
+          "nullable": true
+        },
+        {
+          "name": "tax_code",
+          "type": "varchar(48)",
+          "nullable": true,
+          "unique": true
+        },
+        {
+          "name": "industry_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_industries",
+            "column": "id"
+          }
+        },
+        {
+          "name": "website_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "logo_image_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "logo_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "founded_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "active"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "industry_id",
+            "status"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_securities",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "company_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_companies",
+            "column": "id"
+          }
+        },
+        {
+          "name": "exchange_id",
+          "type": "smallint",
+          "nullable": false,
+          "references": {
+            "table": "market_exchanges",
+            "column": "id"
+          }
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "varchar(320)",
+          "nullable": true
+        },
+        {
+          "name": "security_type",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "stock"
+        },
+        {
+          "name": "isin",
+          "type": "varchar(32)",
+          "nullable": true
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": false,
+          "default": "VND"
+        },
+        {
+          "name": "listing_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "delisting_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "outstanding_shares",
+          "type": "decimal(24,0)",
+          "nullable": true
+        },
+        {
+          "name": "free_float_shares",
+          "type": "decimal(24,0)",
+          "nullable": true
+        },
+        {
+          "name": "trading_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "listed"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "exchange_id",
+            "symbol"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "company_id",
+            "trading_status"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "isin"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_security_symbol_history",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "exchange_id",
+          "type": "smallint",
+          "nullable": false,
+          "references": {
+            "table": "market_exchanges",
+            "column": "id"
+          }
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "effective_from",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "effective_to",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "change_reason",
+          "type": "varchar(300)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "effective_from"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "exchange_id",
+            "symbol",
+            "effective_from"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_indices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "code",
+          "type": "varchar(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "exchange_id",
+          "type": "smallint",
+          "nullable": true,
+          "references": {
+            "table": "market_exchanges",
+            "column": "id"
+          }
+        },
+        {
+          "name": "base_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "base_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": false,
+          "default": "VND"
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "market_universes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "code",
+          "type": "varchar(48)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "universe_kind",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "index_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_indices",
+            "column": "id"
+          }
+        },
+        {
+          "name": "exchange_id",
+          "type": "smallint",
+          "nullable": true,
+          "references": {
+            "table": "market_exchanges",
+            "column": "id"
+          }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "methodology_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "market_universe_memberships",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "universe_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_universes",
+            "column": "id"
+          }
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "effective_from",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "effective_to",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "weight_percent",
+          "type": "decimal(12,8)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "universe_id",
+            "security_id",
+            "effective_from"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "universe_id",
+            "effective_to"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "security_id",
+            "effective_from"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_providers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "code",
+          "type": "varchar(64)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "homepage_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "data_license",
+          "type": "varchar(28)",
+          "nullable": false,
+          "default": "review_required"
+        },
+        {
+          "name": "attribution_text",
+          "type": "varchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "market_index_prices_daily",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "index_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_indices",
+            "column": "id"
+          }
+        },
+        {
+          "name": "trading_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "open_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "high_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "low_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "close_points",
+          "type": "decimal(20,6)",
+          "nullable": false
+        },
+        {
+          "name": "change_points",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "total_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "turnover_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "index_id",
+            "trading_date"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "trading_date",
+            "index_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_quotes_latest",
+      "columns": [
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "quote_at",
+          "type": "datetime",
+          "nullable": false
+        },
+        {
+          "name": "last_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "reference_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ceiling_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "floor_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "change_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "total_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "total_turnover_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "best_bid_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "best_bid_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "best_ask_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "best_ask_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "market_state",
+          "type": "varchar(24)",
+          "nullable": true
+        },
+        {
+          "name": "is_delayed",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "quote_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_prices_daily",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "trading_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "open_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "high_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "low_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "close_vnd",
+          "type": "decimal(20,4)",
+          "nullable": false
+        },
+        {
+          "name": "adjusted_close_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "reference_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ceiling_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "floor_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "matched_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "turnover_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "foreign_buy_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "foreign_sell_volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "is_final",
+          "type": "boolean",
+          "nullable": false,
+          "default": false
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "trading_date"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "trading_date",
+            "security_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_valuations_daily",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "trading_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "market_cap_vnd",
+          "type": "decimal(30,2)",
+          "nullable": true
+        },
+        {
+          "name": "pe_ttm",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "pb",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "eps_ttm_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "book_value_per_share_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "dividend_yield_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "trading_date"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "trading_date",
+            "security_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_intraday_datasets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "trading_date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "interval_code",
+          "type": "varchar(12)",
+          "nullable": false
+        },
+        {
+          "name": "asset_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "first_observation_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "last_observation_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "row_count",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "trading_date",
+            "interval_code"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "trading_date",
+            "interval_code"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_metric_definitions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "metric_code",
+          "type": "varchar(90)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name_vi",
+          "type": "varchar(220)",
+          "nullable": false
+        },
+        {
+          "name": "metric_group",
+          "type": "varchar(28)",
+          "nullable": false
+        },
+        {
+          "name": "unit_code",
+          "type": "varchar(28)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "market_financial_periods",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "company_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_companies",
+            "column": "id"
+          }
+        },
+        {
+          "name": "period_code",
+          "type": "varchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "fiscal_year",
+          "type": "smallint",
+          "nullable": false
+        },
+        {
+          "name": "fiscal_quarter",
+          "type": "tinyint",
+          "nullable": true
+        },
+        {
+          "name": "period_type",
+          "type": "varchar(16)",
+          "nullable": false
+        },
+        {
+          "name": "statement_scope",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "period_start",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "period_end",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "published_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "audit_status",
+          "type": "varchar(28)",
+          "nullable": false,
+          "default": "unknown"
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": false,
+          "default": "VND"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "company_id",
+            "period_code",
+            "statement_scope"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "fiscal_year",
+            "period_type"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_financial_values",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "period_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_financial_periods",
+            "column": "id"
+          }
+        },
+        {
+          "name": "metric_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_metric_definitions",
+            "column": "id"
+          }
+        },
+        {
+          "name": "value_decimal",
+          "type": "decimal(30,6)",
+          "nullable": false
+        },
+        {
+          "name": "provider_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_providers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "original_value_decimal",
+          "type": "decimal(30,6)",
+          "nullable": true
+        },
+        {
+          "name": "reported_unit",
+          "type": "varchar(32)",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "period_id",
+            "metric_id"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "metric_id",
+            "period_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_disclosure_documents",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "document_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "company_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_companies",
+            "column": "id"
+          }
+        },
+        {
+          "name": "period_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_financial_periods",
+            "column": "id"
+          }
+        },
+        {
+          "name": "document_type",
+          "type": "varchar(36)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar(600)",
+          "nullable": false
+        },
+        {
+          "name": "original_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "mime_type",
+          "type": "varchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "language_code",
+          "type": "varchar(8)",
+          "nullable": false,
+          "default": "vi"
+        },
+        {
+          "name": "published_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "rights_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "link_only"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "company_id",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "period_id",
+            "document_type"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "market_corporate_actions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "action_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "security_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "market_securities",
+            "column": "id"
+          }
+        },
+        {
+          "name": "action_type",
+          "type": "varchar(36)",
+          "nullable": false
+        },
+        {
+          "name": "announcement_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "ex_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "record_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "cash_per_share_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ratio_numerator",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "ratio_denominator",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "disclosure_document_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "market_disclosure_documents",
+            "column": "id"
+          }
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "ex_date"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "action_type",
+            "record_date"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

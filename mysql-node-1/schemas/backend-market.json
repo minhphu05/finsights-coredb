@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "instruments",
+      "columns": [
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "short_name",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "sector",
+          "type": "varchar(180)",
+          "nullable": true
+        },
+        {
+          "name": "exchange",
+          "type": "varchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "market_cap",
+          "type": "decimal(30,2)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "exchange",
+            "symbol"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "stock_quotes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false,
+          "references": {
+            "table": "instruments",
+            "column": "symbol"
+          }
+        },
+        {
+          "name": "price",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "quoted_at",
+          "type": "datetime(3)",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "symbol",
+            "quoted_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "stock_candles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false,
+          "references": {
+            "table": "instruments",
+            "column": "symbol"
+          }
+        },
+        {
+          "name": "candle_at",
+          "type": "datetime(3)",
+          "nullable": false
+        },
+        {
+          "name": "open_price",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "high_price",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "low_price",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "close_price",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "volume",
+          "type": "bigint",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "symbol",
+            "candle_at"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    {
+      "name": "market_indices",
+      "columns": [
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": true,
+          "unique": true
+        },
+        {
+          "name": "value",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "change_value",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "change_percent",
+          "type": "decimal(12,6)",
+          "nullable": true
+        },
+        {
+          "name": "exchange",
+          "type": "varchar(20)",
+          "nullable": true
+        },
+        {
+          "name": "volume",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "quoted_at",
+          "type": "datetime(3)",
+          "nullable": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "news_articles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "slug",
+          "type": "varchar(360)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "title",
+          "type": "varchar(800)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "category",
+          "type": "varchar(180)",
+          "nullable": true
+        },
+        {
+          "name": "image_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "source_name",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "source_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "published_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "body_markdown",
+          "type": "longtext",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "published_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_symbols",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          }
+        },
+        {
+          "name": "symbol",
+          "type": "varchar(24)",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "instruments",
+            "column": "symbol"
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "symbol",
+            "article_id"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

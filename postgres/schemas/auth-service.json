@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "accounts",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "primary_key": true },
+        { "name": "full_name", "type": "text", "nullable": false },
+        { "name": "display_name", "type": "text", "nullable": false, "unique": true },
+        { "name": "email", "type": "text", "nullable": true, "unique": true },
+        { "name": "password_hash", "type": "text", "nullable": true },
+        { "name": "email_verified", "type": "boolean", "nullable": false, "default": false },
+        { "name": "status", "type": "text", "nullable": false, "default": "ACTIVE" },
+        { "name": "roles", "type": "text[]", "nullable": false, "default": ["USER"] },
+        { "name": "created_at", "type": "timestamp(3)", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        { "name": "updated_at", "type": "timestamp(3)", "nullable": false },
+        { "name": "last_login_at", "type": "timestamp(3)", "nullable": true }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "oauth_accounts",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "primary_key": true },
+        { "name": "account_id", "type": "uuid", "nullable": false, "references": { "table": "accounts", "column": "id", "on_delete": "CASCADE" } },
+        { "name": "provider", "type": "text", "nullable": false },
+        { "name": "provider_account_id", "type": "text", "nullable": false },
+        { "name": "provider_email", "type": "text", "nullable": true },
+        { "name": "created_at", "type": "timestamp(3)", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "refresh_tokens",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "primary_key": true },
+        { "name": "jti", "type": "text", "nullable": false, "unique": true },
+        { "name": "account_id", "type": "uuid", "nullable": false, "references": { "table": "accounts", "column": "id", "on_delete": "CASCADE" } },
+        { "name": "token_hash", "type": "text", "nullable": false },
+        { "name": "device_name", "type": "text", "nullable": true },
+        { "name": "user_agent", "type": "text", "nullable": true },
+        { "name": "ip_address", "type": "text", "nullable": true },
+        { "name": "expires_at", "type": "timestamp(3)", "nullable": false },
+        { "name": "revoked", "type": "boolean", "nullable": false, "default": false },
+        { "name": "revoked_at", "type": "timestamp(3)", "nullable": true },
+        { "name": "created_at", "type": "timestamp(3)", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        { "name": "last_used_at", "type": "timestamp(3)", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "outbox_events",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "primary_key": true },
+        { "name": "aggregate_id", "type": "uuid", "nullable": false },
+        { "name": "event_type", "type": "text", "nullable": false },
+        { "name": "payload", "type": "jsonb", "nullable": false },
+        { "name": "created_at", "type": "timestamp(3)", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        { "name": "processed_at", "type": "timestamp(3)", "nullable": true },
+        { "name": "attempts", "type": "integer", "nullable": false, "default": 0 },
+        { "name": "status", "type": "text", "nullable": false, "default": "pending" }
+      ],
+      "indexes": [
+        { "columns": ["status", "processed_at", "created_at"], "unique": false }
+      ]
+    }
+  ]
+}

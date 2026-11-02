@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "asset_buckets",
+      "columns": [
+        {"name": "id", "type": "bigint", "nullable": false, "primary_key": true, "autoincrement": true},
+        {"name": "bucket_uid", "type": "char(36)", "nullable": false, "unique": true},
+        {"name": "code", "type": "varchar(64)", "nullable": false, "unique": true},
+        {"name": "provider", "type": "varchar(28)", "nullable": false, "default": "oci_object_storage"},
+        {"name": "tenancy_alias", "type": "varchar(80)", "nullable": false},
+        {"name": "region_code", "type": "varchar(60)", "nullable": false},
+        {"name": "namespace_name", "type": "varchar(180)", "nullable": false},
+        {"name": "bucket_name", "type": "varchar(200)", "nullable": false},
+        {"name": "bucket_role", "type": "varchar(24)", "nullable": false},
+        {"name": "default_storage_class", "type": "varchar(32)", "nullable": false, "default": "Standard"},
+        {"name": "is_public", "type": "boolean", "nullable": false, "default": false},
+        {"name": "is_active", "type": "boolean", "nullable": false, "default": true},
+        {"name": "created_at", "type": "datetime", "nullable": false, "default": "CURRENT_TIMESTAMP"}
+      ],
+      "indexes": [{"columns": ["tenancy_alias", "region_code", "namespace_name", "bucket_name"], "unique": true}]
+    },
+    {
+      "name": "assets",
+      "columns": [
+        {"name": "id", "type": "bigint", "nullable": false, "primary_key": true, "autoincrement": true},
+        {"name": "asset_uid", "type": "char(36)", "nullable": false, "unique": true},
+        {"name": "owner_domain", "type": "varchar(24)", "nullable": false},
+        {"name": "asset_kind", "type": "varchar(28)", "nullable": false},
+        {"name": "display_name", "type": "varchar(500)", "nullable": true},
+        {"name": "original_filename", "type": "varchar(500)", "nullable": true},
+        {"name": "source_url", "type": "text", "nullable": true},
+        {"name": "rights_status", "type": "varchar(24)", "nullable": false, "default": "unknown"},
+        {"name": "metadata_json", "type": "json", "nullable": true},
+        {"name": "created_at", "type": "datetime", "nullable": false, "default": "CURRENT_TIMESTAMP"},
+        {"name": "updated_at", "type": "datetime", "nullable": false, "default": "CURRENT_TIMESTAMP"}
+      ],
+      "indexes": [{"columns": ["owner_domain", "asset_kind", "created_at"], "unique": false}]
+    },
+    {
+      "name": "asset_files",
+      "columns": [
+        {"name": "id", "type": "bigint", "nullable": false, "primary_key": true, "autoincrement": true},
+        {"name": "asset_id", "type": "bigint", "nullable": false, "references": {"table": "assets", "column": "id"}},
+        {"name": "bucket_id", "type": "bigint", "nullable": false, "references": {"table": "asset_buckets", "column": "id"}},
+        {"name": "object_key", "type": "varchar(1024)", "nullable": false},
+        {"name": "object_key_sha256", "type": "char(64)", "nullable": false},
+        {"name": "storage_role", "type": "varchar(24)", "nullable": false},
+        {"name": "mime_type", "type": "varchar(150)", "nullable": false},
+        {"name": "size_bytes", "type": "bigint", "nullable": false},
+        {"name": "content_sha256", "type": "char(64)", "nullable": true},
+        {"name": "etag", "type": "varchar(255)", "nullable": true},
+        {"name": "object_version_id", "type": "varchar(255)", "nullable": true},
+        {"name": "storage_class", "type": "varchar(32)", "nullable": false, "default": "Standard"},
+        {"name": "width_px", "type": "int", "nullable": true},
+        {"name": "height_px", "type": "int", "nullable": true},
+        {"name": "object_status", "type": "varchar(24)", "nullable": false, "default": "available"},
+        {"name": "created_at", "type": "datetime", "nullable": false, "default": "CURRENT_TIMESTAMP"},
+        {"name": "deleted_at", "type": "datetime", "nullable": true}
+      ],
+      "indexes": [
+        {"columns": ["bucket_id", "object_key_sha256"], "unique": true},
+        {"columns": ["asset_id", "storage_role"], "unique": false},
+        {"columns": ["asset_id", "bucket_id"], "unique": false},
+        {"columns": ["content_sha256", "size_bytes"], "unique": false}
+      ]
+    },
+    {
+      "name": "asset_variants",
+      "columns": [
+        {"name": "original_asset_id", "type": "bigint", "nullable": false, "primary_key": true, "references": {"table": "assets", "column": "id"}},
+        {"name": "variant_asset_id", "type": "bigint", "nullable": false, "unique": true, "references": {"table": "assets", "column": "id"}},
+        {"name": "variant_code", "type": "varchar(40)", "nullable": false}
+      ],
+      "indexes": []
+    }
+  ]
+}

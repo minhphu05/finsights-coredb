@@ -1,0 +1,740 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "news_publishers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "code",
+          "type": "varchar(48)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "domain",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "homepage_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "logo_image_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "language_code",
+          "type": "varchar(8)",
+          "nullable": false,
+          "default": "vi"
+        },
+        {
+          "name": "attribution_name",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "content_rights",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "link_only"
+        },
+        {
+          "name": "terms_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "domain"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "parent_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "news_categories",
+            "column": "id"
+          }
+        },
+        {
+          "name": "slug",
+          "type": "varchar(120)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "display_order",
+          "type": "int",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "news_tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "slug",
+          "type": "varchar(140)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "tag_type",
+          "type": "varchar(32)",
+          "nullable": false,
+          "default": "topic"
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "news_authors",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "publisher_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "news_publishers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(220)",
+          "nullable": false
+        },
+        {
+          "name": "profile_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "avatar_image_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "author_key",
+          "type": "varchar(180)",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "publisher_id",
+            "author_key"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    {
+      "name": "news_articles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "article_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "publisher_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_publishers",
+            "column": "id"
+          }
+        },
+        {
+          "name": "publisher_article_id",
+          "type": "varchar(160)",
+          "nullable": true
+        },
+        {
+          "name": "canonical_url",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "canonical_url_sha256",
+          "type": "char(64)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "varchar(360)",
+          "nullable": true
+        },
+        {
+          "name": "title",
+          "type": "varchar(800)",
+          "nullable": false
+        },
+        {
+          "name": "subtitle",
+          "type": "varchar(800)",
+          "nullable": true
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "excerpt",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "original_section",
+          "type": "varchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "language_code",
+          "type": "varchar(8)",
+          "nullable": false,
+          "default": "vi"
+        },
+        {
+          "name": "published_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "modified_at",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "cover_image_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "cover_image_alt",
+          "type": "varchar(600)",
+          "nullable": true
+        },
+        {
+          "name": "canonical_cover_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "article_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "published"
+        },
+        {
+          "name": "content_rights",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "link_only"
+        },
+        {
+          "name": "language_metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "opengraph_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "schema_org_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "publisher_id",
+            "canonical_url_sha256"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "publisher_id",
+            "publisher_article_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "article_status",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "publisher_id",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "published_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_contents",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          }
+        },
+        {
+          "name": "body_plaintext",
+          "type": "longtext",
+          "nullable": true
+        },
+        {
+          "name": "body_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "source_html_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "content_format",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "plain_text"
+        },
+        {
+          "name": "word_count",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "content_sha256",
+          "type": "char(64)",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "news_article_authors",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "author_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_authors",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "author_order",
+          "type": "smallint",
+          "nullable": false,
+          "default": 0
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "author_id",
+            "article_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_categories",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "category_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_categories",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "nullable": false,
+          "default": false
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "category_id",
+            "article_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_tags",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "tag_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_tags",
+            "column": "id"
+          },
+          "primary_key": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "tag_id",
+            "article_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_media",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          }
+        },
+        {
+          "name": "media_type",
+          "type": "varchar(20)",
+          "nullable": false,
+          "default": "image"
+        },
+        {
+          "name": "role",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "inline"
+        },
+        {
+          "name": "original_url",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "alt_text",
+          "type": "varchar(800)",
+          "nullable": true
+        },
+        {
+          "name": "caption",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "credit",
+          "type": "varchar(320)",
+          "nullable": true
+        },
+        {
+          "name": "mime_type",
+          "type": "varchar(120)",
+          "nullable": true
+        },
+        {
+          "name": "width_px",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "height_px",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "article_id",
+            "sort_order"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "asset_uid"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "news_article_securities",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "news_articles",
+            "column": "id"
+          },
+          "primary_key": true
+        },
+        {
+          "name": "security_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "symbol_at_publication",
+          "type": "varchar(24)",
+          "nullable": true
+        },
+        {
+          "name": "relation_type",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "mentioned"
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "nullable": false,
+          "default": false
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "security_uid",
+            "article_id"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

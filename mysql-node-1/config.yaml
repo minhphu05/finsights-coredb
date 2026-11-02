@@ -1,0 +1,61 @@
+version: 1
+target: mysql-node-1
+engine: mysql
+connection:
+  host: 161.33.181.173
+  host_env: MYSQL_NODE_1_HOST
+  port: 3306
+  database: mysql
+  username: finsightsadmin
+  password_env: MYSQL_NODE_1_ADMIN_PASSWORD
+  tls: verify
+  tls_ca_pem_env: MYSQL_NODE_1_TLS_CA_PEM
+  tls_ca_file_env: MYSQL_NODE_1_TLS_CA_FILE
+  connect_timeout: 10
+managed_database_prefix: finsights_
+managed_user_prefix: finsights_
+database_charset: utf8mb4
+database_collation: utf8mb4_unicode_ci
+databases:
+  - name: finsights_assets
+    schemas:
+      - schemas/assets.json
+  - name: finsights_auth
+    schemas:
+      - schemas/auth.json
+  - name: finsights_market
+    schemas:
+      - schemas/market.json
+      - schemas/backend-market.json
+  - name: finsights_news
+    schemas:
+      - schemas/news.json
+  - name: finsights_user
+    schemas:
+      - schemas/user.json
+users:
+  - name: finsights_assets_app
+    host: "%"
+    password_env: MYSQL_ASSETS_APP_PASSWORD
+    database: finsights_assets
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_auth_app
+    host: "%"
+    password_env: MYSQL_AUTH_APP_PASSWORD
+    database: finsights_auth
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_market_app
+    host: "%"
+    password_env: MYSQL_MARKET_APP_PASSWORD
+    database: finsights_market
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_news_app
+    host: "%"
+    password_env: MYSQL_NEWS_APP_PASSWORD
+    database: finsights_news
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_user_app
+    host: "%"
+    password_env: MYSQL_USER_APP_PASSWORD
+    database: finsights_user
+    privileges: [SELECT, INSERT, UPDATE, DELETE]

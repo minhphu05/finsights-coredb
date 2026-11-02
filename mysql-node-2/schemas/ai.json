@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "chat_sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "session_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "user_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "title",
+          "type": "varchar(240)",
+          "nullable": true
+        },
+        {
+          "name": "model_provider",
+          "type": "varchar(48)",
+          "nullable": true
+        },
+        {
+          "name": "session_status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "default": "active"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "closed_at",
+          "type": "datetime(3)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "user_uid",
+            "updated_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "session_status",
+            "updated_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "chat_messages",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "message_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "session_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "chat_sessions",
+            "column": "id"
+          }
+        },
+        {
+          "name": "speaker",
+          "type": "varchar(16)",
+          "nullable": false
+        },
+        {
+          "name": "message_text",
+          "type": "longtext",
+          "nullable": false
+        },
+        {
+          "name": "message_status",
+          "type": "varchar(20)",
+          "nullable": false,
+          "default": "complete"
+        },
+        {
+          "name": "model_name",
+          "type": "varchar(120)",
+          "nullable": true
+        },
+        {
+          "name": "prompt_tokens",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "completion_tokens",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "error_code",
+          "type": "varchar(64)",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "session_id",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}
