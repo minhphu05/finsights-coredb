@@ -61,6 +61,8 @@ The VPS jobs run sequentially and take a host lock because all three targets exe
 
 The workflow runs the reconciler on Node 1 because the GitHub-hosted runner cannot resolve the Kubernetes service DNS or reach the MySQL ingress allowlist directly. Node 1 reaches PostgreSQL through the configured `30432` NodePort and reaches both MySQL endpoints. For PostgreSQL, it also syncs `DAGSTER_DB_PASSWORD` into the Kubernetes secret `orchestration/dagster-admin-postgresql-secret` without logging the value. The Dagster chart uses that secret with `dagster_admin`. The SSH host and port are in the workflow file.
 
+After MySQL Node 1 reconciliation succeeds, the workflow also refreshes the backend `finsights-backend-secrets` values for auth, user, and market DSNs from the same `MYSQL_*_APP_PASSWORD` GitHub secrets used to provision those accounts. It preserves the existing JWT and RabbitMQ values, applies the Secret without printing credentials, and restarts the three database-backed deployments so they read the updated DSNs.
+
 ## Local use
 
 For local deployment, the ignored `.env` contains the database passwords. `.env.example` is the tracked template; keep `.env` out of Git. The PostgreSQL default uses Node 1's Tailscale IP and the NodePort from the PostgreSQL chart; set it to a route reachable from your machine if running locally. MySQL uses TLS 1.2 or newer, validates the endpoint-specific CA, and verifies the server certificate name.

@@ -58,6 +58,8 @@ jobs:
       FINSIGHTS_VPS_HOST: 103.249.117.232
       FINSIGHTS_VPS_PORT: "26567"
       FINSIGHTS_VPS_USER: root
+      MYSQL_NODE_1_HOST: 161.33.181.173
+      MYSQL_NODE_1_PORT: "3306"
       MYSQL_NODE_1_ADMIN_PASSWORD: ${{ secrets.MYSQL_NODE_1_ADMIN_PASSWORD }}
       MYSQL_ASSETS_APP_PASSWORD: ${{ secrets.MYSQL_ASSETS_APP_PASSWORD }}
       MYSQL_AUTH_APP_PASSWORD: ${{ secrets.MYSQL_AUTH_APP_PASSWORD }}
@@ -72,6 +74,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: bash scripts/remote-apply.sh mysql-node-1
+      - name: Sync MySQL credentials to backend Secret
+        run: bash scripts/sync-backend-secret.sh
 
   mysql-node-2:
     needs: [changes, mysql-node-1]
