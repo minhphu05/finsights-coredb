@@ -1,73 +1,86 @@
 # Finsights Core DB
 
-`finsights-coredb` initializes and reconciles database objects from versioned YAML and JSON. It creates database names, roles/users, grants, tables, columns, indexes, and foreign keys. It does not insert application records or seed catalog data.
+`finsights-coredb` provisions MySQL and PostgreSQL databases, users, grants, tables, indexes, and foreign keys from versioned YAML and JSON. It creates database structures; it does not copy application rows between MySQL nodes.
 
-## Targets
+## MySQL placement
 
-| Folder | Server | Managed databases |
-|---|---|---|
-| `postgres/` | PostgreSQL in the Kubernetes tools stack | `dagster` |
-| `mysql-node-1/` | OCI MySQL Tokyo account | `finsights_assets`, `finsights_auth`, `finsights_market`, `finsights_news`, `finsights_user` |
-| `mysql-node-2/` | OCI MySQL Singapore account | `finsights_ai`, `finsights_scraping` |
+| Node | Server | Purpose | Managed databases |
+|---|---|---|---|
+| Node 1 | OCI MySQL Tokyo | AI chat history and canonical collection data | `finsights_ai`, `finsights_assets`, `finsights_disclosures`, `finsights_economy`, `finsights_fundamentals`, `finsights_market_data`, `finsights_news`, `finsights_scraping` |
+| Node 2 | OCI MySQL Singapore | Backend-owned service databases and API read model | `finsights_auth`, `finsights_market`, `finsights_user` |
 
-The MySQL target configs use the server addresses documented in `finsights-oracle-database`. The workflow reads each node's existing, separately named repository secret so Tokyo and Singapore keep distinct administrator credentials. The endpoint CA certificates are public trust anchors tracked under each MySQL target.
+The database split keeps each data domain separate. Node 1 owns source data and collection history; Node 2 owns backend account/profile state and the market API read model. `finsights_ai` remains unchanged on Node 1. Oracle Autonomous Database continues to hold RAG chunks and embeddings.
 
-`finsights_scraping` on Node 2 contains scrape audit metadata only: Dagster runs, date windows, stable source-item identities, per-run outcomes, HTTP fetch attempts, and source checkpoints. Article text/media and market facts belong in the Node 1 `finsights_news`, `finsights_market`, and `finsights_assets` databases. Scraper workers use `finsights_scraping_app` to persist run and item audit logs.
+## Database boundaries
 
-`finsights_market` includes both the canonical market catalog schema and the current backend read model. The market service in `finsights-backend` queries `instruments`, `stock_quotes`, `stock_candles`, `market_indices`, `news_articles`, and `news_article_symbols`. The provided canonical news schema is initialized separately in `finsights_news`; the smaller `news_articles` table in `finsights_market` remains the API projection expected by the current service. The MySQL auth/user schemas remain the current Finsights backend contract. The AI database starts with chat sessions and messages; `user_uid` is a logical identifier, not a cross-server foreign key.
+| Database | Node | Contents |
+|---|---:|---|
+| `finsights_ai` | 1 | AI chat sessions and messages; user IDs are logical references. |
+| `finsights_assets` | 1 | Object-storage bucket, object, variant, rights, and checksum metadata; bytes stay in OCI Object Storage. |
+| `finsights_disclosures` | 1 | Issuer filings, corporate actions, and regulator notices. |
+| `finsights_economy` | 1 | Macroeconomic time series and versioned observations. |
+| `finsights_fundamentals` | 1 | Statement periods/revisions, financial metrics, reported values, and source-label mappings. |
+| `finsights_market_data` | 1 | Canonical exchanges, securities, aliases, providers, prices, quotes, indexes, and market history from collectors. |
+| `finsights_news` | 1 | Canonical publisher, article, content, author, media, and security-association data. |
+| `finsights_scraping` | 1 | Source registry, scrape runs/items, fetch attempts, and checkpoints. This is audit/retry history, not a content store. |
+| `finsights_auth` | 2 | Backend authentication accounts and transactional outbox. |
+| `finsights_market` | 2 | MarketService API read model (`instruments`, quotes, candles, indexes, and the API-facing news projection). |
+| `finsights_user` | 2 | Backend profiles and watchlists. |
 
-PostgreSQL is reserved for platform tools. The initial managed database is `dagster`, owned by the login role `dagster_admin`; CoreDB does not declare Dagster's internal tables because Dagster creates and migrates those itself. The config transfers ownership of existing tables and sequences in Dagster's `public` schema from `postgres` to `dagster_admin` so the application can keep its current run and event history while using the dedicated login.
+`finsights_market_data` and `finsights_market` are intentionally separate. The former stores canonical collection data; the latter is the backend-facing model consumed by MarketService. `finsights_news` is canonical article storage. MarketService's smaller news projection belongs in Node 2. CoreDB does not replicate data or create cross-node foreign keys. A projection/transfer process must publish the needed canonical market rows from Node 1 into Node 2; news writes currently need the same separation. Keep stable logical IDs such as `company_uid`, `security_uid`, `article_uid`, and `asset_uid` across databases.
 
-The current backend DSNs map to these Node 1 accounts:
+## Schemas and DBML
 
-| Backend setting | Database | User |
-|---|---|---|
-| `AUTH_MYSQL_DSN` | `finsights_auth` | `finsights_auth_app` |
-| `USER_MYSQL_DSN` | `finsights_user` | `finsights_user_app` |
-| `MARKET_MYSQL_DSN` | `finsights_market` | `finsights_market_app` |
+- YAML manifests under `mysql-node-1/` and `mysql-node-2/` define database placement and app accounts.
+- Each database has one JSON schema under its node's `schemas/` directory.
+- `design/` contains one DBML diagram per database for dbdiagram.io. Keep the matching diagram in sync when its JSON schema changes.
+- `postgres/config.yaml` provisions the Dagster PostgreSQL database separately; Dagster owns its internal tables.
 
-Future news/assets services can use `finsights_news` / `finsights_news_app` and `finsights_assets` / `finsights_assets_app`. The AI service account is `finsights_ai_app` on Node 2.
+PostgreSQL is reserved for platform tools. CoreDB provisions `dagster` with the `dagster_admin` login and hands ownership of existing public tables/sequences to that role. Dagster creates and migrates its own internal tables.
 
-## Reconciliation and removals
+## Data conventions
 
-The JSON schema files are the desired state. Add or edit a table/column/index there and the workflow reconciles it. Removing a column from a managed table drops that column; removing a table drops that table and its data.
+- Store monetary and ratio values as `DECIMAL`, never floating-point columns.
+- Store event timestamps in UTC; business/reporting periods use date boundaries.
+- Keep provider/source IDs and original labels beside normalized values.
+- Preserve statement and macro revisions rather than overwriting source history.
+- Keep large documents, raw HTML, images, and market-data files in object storage. MySQL stores source URL, checksum, MIME type, rights status, and asset UID.
+- Default document/news rights to link-only unless collection rights allow retaining content.
+- Make ingestion idempotent with source IDs, URL hashes, period keys, or source/time keys.
 
-On MySQL, all databases starting with `finsights_` are in this repo's ownership scope. A database removed from that target's `config.yaml` is dropped. Remove its application user from `users` at the same time. Users starting with `finsights_` are also reconciled: a user removed from `users` is dropped. The MySQL account `finsightsadmin` does not match this prefix and is never managed by the workflow. Use the `finsights_` namespace only for objects that this repo owns.
+## Reconciliation and reset
 
-On PostgreSQL, database and role comments mark objects owned by this repo. Removing a marked database or role from `postgres/config.yaml` drops it. Dagster sets `drop_missing_tables: false` and has no schema JSON, so this repo does not prune Dagster's tables.
+GitHub Actions runs `.github/workflows/reconcile.yml`. Changes under one MySQL node folder reconcile that node; `workflow_dispatch` runs all targets. The MySQL jobs run over the Finsights VPS because the GitHub runner cannot reach the MySQL allowlist directly.
 
-These drops are deliberate parts of the desired-state workflow. Review schema/config changes before merging them to `main`.
+Both manifests set `drop_missing_databases` and `drop_missing_users` to `true`. CoreDB therefore removes `finsights_` databases/users that are not declared on that node, then creates the desired databases and schemas. MySQL and HeatWave system schemas are outside the `finsights_` managed scope.
 
-## GitHub Actions setup
+The MySQL administrator account `finsightsadmin` is not managed by CoreDB. Admin credentials and app passwords are kept in GitHub Actions secrets or local ignored `.env` files. MySQL app accounts require TLS. CA files are public trust anchors; each endpoint certificate uses `MySQL_Endpoint_Server` as its verified identity.
 
-The workflow is `.github/workflows/reconcile.yml`. A change under one server folder deploys only that server. Changes to `coredb/`, `requirements.txt`, the deploy script, or the workflow trigger all three targets. `workflow_dispatch` runs all three.
+The workflow uses GitHub Environments `coredb-postgres`, `coredb-mysql-node-1`, and `coredb-mysql-node-2` to scope deployment settings.
 
-Create these GitHub Environments to scope approvals or deployment protection:
+## Backend connection mapping
 
-| Environment | Workflow job |
-|---|---|
-| `coredb-postgres` | PostgreSQL initialization |
-| `coredb-mysql-node-1` | Tokyo MySQL initialization |
-| `coredb-mysql-node-2` | Singapore MySQL initialization |
+| Backend setting | Database | App account | Node |
+|---|---|---|---:|
+| `AUTH_MYSQL_DSN` | `finsights_auth` | `finsights_auth_app` | 2 |
+| `USER_MYSQL_DSN` | `finsights_user` | `finsights_user_app` | 2 |
+| `MARKET_MYSQL_DSN` | `finsights_market` | `finsights_market_app` | 2 |
+| AI chat-history connection | `finsights_ai` | `finsights_ai_app` | 1 |
 
-Create these **repository secrets** with the exact names below. Existing secrets at repository scope are available to these jobs even though each job selects an Environment:
+Collection workers write audit and canonical source data to Node 1 using the Node 1 CA. The workflow refreshes the three backend MySQL DSNs in the Kubernetes Secret `finsights-backend-secrets` after Node 2 is reconciled, while preserving JWT and RabbitMQ values.
+
+## GitHub Actions secrets
+
+Create these repository secrets with the exact names:
 
 - PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`.
-- MySQL Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
-- MySQL Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
-- SSH to Node 1: `FINSIGHTS_VPS_SSH_KEY` and `FINSIGHTS_VPS_KNOWN_HOSTS`.
+- Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
+- Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
+- SSH: `FINSIGHTS_VPS_SSH_KEY`, `FINSIGHTS_VPS_KNOWN_HOSTS`.
 
-The checked-in MySQL CA certificates are public certificates, not passwords. The current MySQL endpoints present a certificate whose common name is `MySQL_Endpoint_Server` and has no IP subject alternative name. CoreDB verifies the TLS certificate against the per-endpoint CA file and verifies that common name while resolving it to the configured endpoint IP inside the CoreDB process. Refresh the corresponding CA file if OCI rotates that endpoint's certificate chain.
-
-The VPS jobs run sequentially and take a host lock because all three targets execute on Node 1. If Python's `venv` module is absent, `remote-apply.sh` installs only the matching `pythonX.Y-venv` OS package when running as root; it does not install a database service. This keeps the workflow's peak memory use low on the 8 GB VPS.
-
-The workflow runs the reconciler on Node 1 because the GitHub-hosted runner cannot resolve the Kubernetes service DNS or reach the MySQL ingress allowlist directly. Node 1 reaches PostgreSQL through the configured `30432` NodePort and reaches both MySQL endpoints. For PostgreSQL, it also syncs `DAGSTER_DB_PASSWORD` into the Kubernetes secret `orchestration/dagster-admin-postgresql-secret` without logging the value. The Dagster chart uses that secret with `dagster_admin`. The SSH host and port are in the workflow file.
-
-After MySQL Node 1 reconciliation succeeds, the workflow also refreshes the backend `finsights-backend-secrets` values for auth, user, and market DSNs from the same `MYSQL_*_APP_PASSWORD` GitHub secrets used to provision those accounts. It preserves the existing JWT and RabbitMQ values, applies the Secret without printing credentials, and restarts the three database-backed deployments so they read the updated DSNs.
+The existing `MYSQL_SCRAPING_APP_PASSWORD` is reused for the planned Node 1 collector accounts for fundamentals, disclosures, economy, and market data until those domains receive dedicated runtime credentials. No password value is stored in this repository.
 
 ## Local use
-
-For local deployment, the ignored `.env` contains the database passwords. `.env.example` is the tracked template; keep `.env` out of Git. The PostgreSQL default uses Node 1's Tailscale IP and the NodePort from the PostgreSQL chart; set it to a route reachable from your machine if running locally. MySQL uses TLS 1.2 or newer, validates the endpoint-specific CA, and verifies the server certificate name.
 
 ```bash
 python3 -m venv .venv
@@ -76,8 +89,4 @@ pip install -r requirements.txt
 python -m coredb.cli apply --target mysql-node-1
 ```
 
-Use `--target postgres` or `--target mysql-node-2` for the other servers. The local command reads `.env`; GitHub Actions transfers a short-lived JSON secrets file to Node 1 and removes it after the run.
-
-## PostgreSQL deployment alignment
-
-The Dagster chart uses database `dagster`, login role `dagster_admin`, and the Kubernetes secret synchronized by the PostgreSQL workflow. Dagster owns its internal schema migrations; CoreDB provisions the database and credentials, then leaves table creation and upgrades to Dagster.
+Use `--target mysql-node-2` or `--target postgres` for the other targets. The local command reads `.env`; GitHub Actions transfers a short-lived secret file to the Finsights VPS and removes it after the run.

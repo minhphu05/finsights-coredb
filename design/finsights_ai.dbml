@@ -1,0 +1,39 @@
+Project finsights_ai {
+  database_type: 'MySQL'
+  Note: 'Node 1 · AI chat history; user_uid is a logical reference to the backend account.'
+}
+
+Table chat_sessions {
+  id bigint [pk, increment, not null]
+  session_uid char(36) [not null, unique]
+  user_uid char(36)
+  title varchar(240)
+  model_provider varchar(48)
+  session_status varchar(16) [not null, default: 'active']
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  closed_at datetime(3)
+  Indexes {
+    (user_uid, updated_at)
+    (session_status, updated_at)
+  }
+}
+
+Table chat_messages {
+  id bigint [pk, increment, not null]
+  message_uid char(36) [not null, unique]
+  session_id bigint [not null]
+  speaker varchar(16) [not null]
+  message_text longtext [not null]
+  message_status varchar(20) [not null, default: 'complete']
+  model_name varchar(120)
+  prompt_tokens int
+  completion_tokens int
+  error_code varchar(64)
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (session_id, created_at)
+  }
+}
+
+Ref: chat_messages.session_id > chat_sessions.id

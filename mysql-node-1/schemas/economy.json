@@ -1,0 +1,301 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "economic_sources",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "source_kind",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "base_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "terms_url",
+          "type": "varchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "timezone",
+          "type": "varchar(48)",
+          "nullable": false,
+          "default": "Asia/Ho_Chi_Minh"
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "economic_series",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "series_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "economic_sources",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "series_code",
+          "type": "varchar(160)",
+          "nullable": false
+        },
+        {
+          "name": "name_vi",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "name_en",
+          "type": "varchar(320)",
+          "nullable": true
+        },
+        {
+          "name": "topic_code",
+          "type": "varchar(48)",
+          "nullable": false
+        },
+        {
+          "name": "geography_code",
+          "type": "varchar(48)",
+          "nullable": false,
+          "default": "VN"
+        },
+        {
+          "name": "frequency_code",
+          "type": "varchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "unit_code",
+          "type": "varchar(32)",
+          "nullable": false
+        },
+        {
+          "name": "seasonal_adjustment",
+          "type": "varchar(20)",
+          "nullable": true
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": true
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_id",
+            "series_code"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "topic_code",
+            "geography_code"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "is_active",
+            "frequency_code"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "economic_observations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "series_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "economic_series",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "reference_period_start",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "reference_period_end",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "value_decimal",
+          "type": "decimal(30,6)",
+          "nullable": true
+        },
+        {
+          "name": "raw_value_text",
+          "type": "varchar(255)",
+          "nullable": true
+        },
+        {
+          "name": "released_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "source_updated_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "revision_no",
+          "type": "smallint",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "is_current",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "series_id",
+            "reference_period_start",
+            "revision_no"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "series_id",
+            "reference_period_end"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "released_at"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

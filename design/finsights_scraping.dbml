@@ -1,0 +1,134 @@
+Project finsights_scraping {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Collection source registry, run/item/fetch audit, and checkpoints.'
+}
+
+Table scrape_sources {
+  id bigint [pk, increment, not null]
+  source_code varchar(64) [not null, unique]
+  source_kind varchar(24) [not null]
+  display_name varchar(180) [not null]
+  base_url varchar(512) [not null]
+  timezone varchar(48) [not null, default: 'Asia/Ho_Chi_Minh']
+  is_active tinyint [not null, default: 1]
+  rate_limit_rps decimal(5,3) [not null, default: 0.5]
+  config_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_kind)
+    (is_active)
+  }
+}
+
+Table scrape_runs {
+  id bigint [pk, increment, not null]
+  dagster_run_id varchar(64) [not null, unique]
+  job_name varchar(128) [not null]
+  source_id bigint [not null]
+  start_date date [not null]
+  end_date date [not null]
+  status varchar(24) [not null, default: 'STARTED']
+  started_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  finished_at datetime(3)
+  items_discovered bigint [not null, default: 0]
+  items_fetched bigint [not null, default: 0]
+  items_persisted bigint [not null, default: 0]
+  items_duplicate bigint [not null, default: 0]
+  items_out_of_range bigint [not null, default: 0]
+  items_rejected bigint [not null, default: 0]
+  items_failed bigint [not null, default: 0]
+  error_summary text
+  duration_ms bigint
+  Indexes {
+    (source_id, started_at)
+    (source_id, start_date, end_date)
+    (status, started_at)
+  }
+}
+
+Table scrape_items {
+  id bigint [pk, increment, not null]
+  source_id bigint [not null]
+  item_kind varchar(24) [not null]
+  identity_sha256 char(64) [not null]
+  source_item_id varchar(200)
+  canonical_url varchar(2048) [not null]
+  canonical_url_sha256 char(64) [not null]
+  published_at datetime(3)
+  business_date date
+  content_fingerprint_sha256 char(64)
+  destination_domain varchar(24)
+  destination_database varchar(64)
+  destination_uid char(36)
+  first_seen_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  last_seen_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  last_run_id bigint
+  last_outcome varchar(24) [not null, default: 'DISCOVERED']
+  metadata_json json
+  Indexes {
+    (source_id, identity_sha256) [unique]
+    (source_id, source_item_id)
+    (source_id, published_at)
+    (destination_domain, destination_uid)
+  }
+}
+
+Table scrape_run_items {
+  run_id bigint [pk, not null]
+  item_id bigint [pk, not null]
+  outcome varchar(24) [not null]
+  discovered_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  processed_at datetime(3)
+  error_code varchar(64)
+  error_message text
+  metadata_json json
+  Indexes {
+    (item_id, run_id)
+    (outcome, processed_at)
+  }
+}
+
+Table scrape_fetch_attempts {
+  id bigint [pk, increment, not null]
+  run_id bigint [not null]
+  source_id bigint [not null]
+  resource_kind varchar(24) [not null]
+  resource_url varchar(2048) [not null]
+  page_number int
+  attempt_number smallint [not null, default: 1]
+  requested_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  completed_at datetime(3)
+  http_status smallint
+  response_content_type varchar(160)
+  response_size_bytes bigint
+  response_sha256 char(64)
+  duration_ms int
+  outcome varchar(24) [not null]
+  error_type varchar(80)
+  error_message text
+  Indexes {
+    (run_id, requested_at)
+    (source_id, resource_kind, requested_at)
+    (http_status)
+  }
+}
+
+Table scrape_checkpoints {
+  source_id bigint [pk, not null]
+  checkpoint_key varchar(96) [pk, not null]
+  checkpoint_value varchar(1000)
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (updated_at)
+  }
+}
+
+Ref: scrape_runs.source_id > scrape_sources.id
+Ref: scrape_items.source_id > scrape_sources.id
+Ref: scrape_items.last_run_id > scrape_runs.id
+Ref: scrape_run_items.run_id > scrape_runs.id
+Ref: scrape_run_items.item_id > scrape_items.id
+Ref: scrape_fetch_attempts.run_id > scrape_runs.id
+Ref: scrape_fetch_attempts.source_id > scrape_sources.id
+Ref: scrape_checkpoints.source_id > scrape_sources.id

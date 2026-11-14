@@ -15,21 +15,32 @@ managed_database_prefix: finsights_
 managed_user_prefix: finsights_
 database_charset: utf8mb4
 database_collation: utf8mb4_unicode_ci
+# CoreDB owns all finsights_ databases and users on this node.
+drop_missing_databases: true
+drop_missing_users: true
 databases:
-  - name: finsights_ai
+  - name: finsights_auth
     schemas:
-      - schemas/ai.json
-  - name: finsights_scraping
+      - schemas/auth.json
+  - name: finsights_market
     schemas:
-      - schemas/scraping.json
+      - schemas/backend-market.json
+  - name: finsights_user
+    schemas:
+      - schemas/user.json
 users:
-  - name: finsights_ai_app
+  - name: finsights_auth_app
     host: "%"
-    password_env: MYSQL_AI_APP_PASSWORD
-    database: finsights_ai
+    password_env: MYSQL_AUTH_APP_PASSWORD
+    database: finsights_auth
     privileges: [SELECT, INSERT, UPDATE, DELETE]
-  - name: finsights_scraping_app
+  - name: finsights_market_app
     host: "%"
-    password_env: MYSQL_SCRAPING_APP_PASSWORD
-    database: finsights_scraping
+    password_env: MYSQL_MARKET_APP_PASSWORD
+    database: finsights_market
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_user_app
+    host: "%"
+    password_env: MYSQL_USER_APP_PASSWORD
+    database: finsights_user
     privileges: [SELECT, INSERT, UPDATE, DELETE]

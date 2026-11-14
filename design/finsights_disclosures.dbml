@@ -1,0 +1,89 @@
+Project finsights_disclosures {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Issuer filings, corporate actions, and regulator notices.'
+}
+
+Table issuer_disclosures {
+  id bigint [pk, increment, not null]
+  disclosure_uid char(36) [not null, unique]
+  source_code varchar(64) [not null]
+  source_item_id varchar(200)
+  company_uid char(36) [not null]
+  security_uid char(36)
+  disclosure_kind varchar(36) [not null]
+  title varchar(600) [not null]
+  summary text
+  language_code varchar(8) [not null, default: 'vi']
+  published_at datetime(3)
+  original_url text
+  canonical_url_sha256 char(64) [unique]
+  document_asset_uid char(36)
+  source_asset_uid char(36)
+  mime_type varchar(100)
+  rights_status varchar(24) [not null, default: 'link_only']
+  record_status varchar(24) [not null, default: 'published']
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_code, source_item_id) [unique]
+    (company_uid, published_at)
+    (security_uid, published_at)
+    (disclosure_kind, published_at)
+  }
+}
+
+Table corporate_actions {
+  id bigint [pk, increment, not null]
+  action_uid char(36) [not null, unique]
+  source_code varchar(64) [not null]
+  source_item_id varchar(200)
+  company_uid char(36) [not null]
+  security_uid char(36) [not null]
+  action_type varchar(36) [not null]
+  announcement_date date
+  ex_date date
+  record_date date
+  payment_date date
+  cash_per_share_vnd decimal(20,4)
+  ratio_numerator decimal(20,6)
+  ratio_denominator decimal(20,6)
+  subscription_price_vnd decimal(20,4)
+  description text
+  disclosure_id bigint
+  metadata_json json
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_code, source_item_id) [unique]
+    (security_uid, ex_date)
+    (action_type, record_date)
+  }
+}
+
+Table regulatory_notices {
+  id bigint [pk, increment, not null]
+  notice_uid char(36) [not null, unique]
+  source_code varchar(64) [not null]
+  source_item_id varchar(200)
+  authority_name varchar(180) [not null]
+  notice_kind varchar(36) [not null]
+  title varchar(600) [not null]
+  summary text
+  company_uid char(36)
+  published_at datetime(3)
+  effective_date date
+  original_url text
+  canonical_url_sha256 char(64) [unique]
+  document_asset_uid char(36)
+  rights_status varchar(24) [not null, default: 'link_only']
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_code, source_item_id) [unique]
+    (authority_name, published_at)
+    (company_uid, published_at)
+    (notice_kind, effective_date)
+  }
+}
+
+Ref: corporate_actions.disclosure_id > issuer_disclosures.id

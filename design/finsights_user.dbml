@@ -1,0 +1,20 @@
+Project finsights_user {
+  database_type: 'MySQL'
+  Note: 'Node 2 · Backend user profiles and watchlists; account_id is a logical reference to finsights_auth.'
+}
+
+Table users {
+  account_id bigint [pk, not null]
+  display_name varchar(120) [not null]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+}
+
+Table watchlist_symbols {
+  account_id bigint [pk, not null]
+  symbol varchar(24) [pk, not null]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (account_id, created_at)
+  }
+}

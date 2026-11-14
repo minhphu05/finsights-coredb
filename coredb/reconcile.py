@@ -186,11 +186,12 @@ def _mysql_sync_users(conn: Any, manifest: dict[str, Any]) -> None:
     configured = manifest.get("users", [])
     desired = {(user["name"], user.get("host", "%")): user for user in configured}
     prefix = manifest["managed_user_prefix"]
-    existing = conn.exec_driver_sql("SELECT User, Host FROM mysql.user").all()
-    for name, host in sorted(existing):
-        if name.startswith(prefix) and (name, host) not in desired:
-            LOG.warning("Dropping managed MySQL account %s@%s", name, host)
-            conn.exec_driver_sql(f"DROP USER IF EXISTS {_mysql_account(name, host)}")
+    if manifest.get("drop_missing_users", True):
+        existing = conn.exec_driver_sql("SELECT User, Host FROM mysql.user").all()
+        for name, host in sorted(existing):
+            if name.startswith(prefix) and (name, host) not in desired:
+                LOG.warning("Dropping managed MySQL account %s@%s", name, host)
+                conn.exec_driver_sql(f"DROP USER IF EXISTS {_mysql_account(name, host)}")
 
     for (name, host), user in desired.items():
         password = _required_env(user["password_env"])
@@ -245,7 +246,8 @@ def _mysql_apply(manifest: dict[str, Any]) -> None:
 
         with admin.begin() as conn:
             _mysql_sync_users(conn, manifest)
-            _mysql_drop_missing_databases(conn, manifest)
+            if manifest.get("drop_missing_databases", True):
+                _mysql_drop_missing_databases(conn, manifest)
     finally:
         admin.dispose()
 

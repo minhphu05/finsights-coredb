@@ -1,0 +1,222 @@
+Project finsights_news {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Canonical financial-news metadata, ordered content, authors, media, and security matches.'
+}
+
+Table news_publishers {
+  id bigint [pk, increment, not null]
+  code varchar(48) [not null, unique]
+  name varchar(200) [not null]
+  domain varchar(255) [not null]
+  homepage_url varchar(1000)
+  logo_image_url text
+  language_code varchar(8) [not null, default: 'vi']
+  attribution_name varchar(220)
+  content_rights varchar(24) [not null, default: 'link_only']
+  terms_url varchar(1000)
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (domain)
+  }
+}
+
+Table news_categories {
+  id bigint [pk, increment, not null]
+  parent_id bigint
+  slug varchar(120) [not null, unique]
+  name varchar(180) [not null]
+  description text
+  display_order int [not null, default: 0]
+  is_active boolean [not null, default: true]
+}
+
+Table news_tags {
+  id bigint [pk, increment, not null]
+  slug varchar(140) [not null, unique]
+  name varchar(180) [not null]
+  tag_type varchar(32) [not null, default: 'topic']
+  is_active boolean [not null, default: true]
+}
+
+Table news_authors {
+  id bigint [pk, increment, not null]
+  publisher_id bigint
+  display_name varchar(220) [not null]
+  profile_url text
+  bio text
+  avatar_image_url text
+  author_key varchar(180)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (publisher_id, author_key) [unique]
+  }
+}
+
+Table news_articles {
+  id bigint [pk, increment, not null]
+  article_uid char(36) [not null, unique]
+  publisher_id bigint [not null]
+  publisher_article_id varchar(160)
+  canonical_url text [not null]
+  canonical_url_sha256 char(64) [not null]
+  slug varchar(360)
+  title varchar(800) [not null]
+  subtitle varchar(800)
+  summary text
+  excerpt text
+  original_section varchar(200)
+  language_code varchar(8) [not null, default: 'vi']
+  published_at datetime
+  modified_at datetime
+  cover_image_url text
+  cover_image_alt varchar(600)
+  canonical_cover_asset_uid char(36)
+  article_status varchar(24) [not null, default: 'published']
+  content_rights varchar(24) [not null, default: 'link_only']
+  language_metadata_json json
+  opengraph_json json
+  schema_org_json json
+  metadata_json json
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (publisher_id, canonical_url_sha256) [unique]
+    (publisher_id, publisher_article_id) [unique]
+    (article_status, published_at)
+    (publisher_id, published_at)
+    (published_at)
+  }
+}
+
+Table news_article_publications {
+  id bigint [pk, increment, not null]
+  article_id bigint [not null]
+  publisher_id bigint [not null]
+  publisher_article_id varchar(160)
+  canonical_url text [not null]
+  canonical_url_sha256 char(64) [not null]
+  original_source_url text
+  published_at datetime(3)
+  title_override varchar(800)
+  summary_override text
+  content_fingerprint_sha256 char(64)
+  is_primary boolean [not null, default: false]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (publisher_id, publisher_article_id) [unique]
+    (publisher_id, canonical_url_sha256) [unique]
+    (article_id, published_at)
+    (content_fingerprint_sha256)
+  }
+}
+
+Table news_article_contents {
+  article_id bigint [pk, not null]
+  body_plaintext longtext
+  body_asset_uid char(36)
+  source_html_asset_uid char(36)
+  content_format varchar(24) [not null, default: 'plain_text']
+  word_count int
+  content_sha256 char(64)
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table news_article_authors {
+  article_id bigint [pk, not null]
+  author_id bigint [pk, not null]
+  author_order smallint [not null, default: 0]
+  Indexes {
+    (author_id, article_id)
+  }
+}
+
+Table news_article_categories {
+  article_id bigint [pk, not null]
+  category_id bigint [pk, not null]
+  is_primary boolean [not null, default: false]
+  Indexes {
+    (category_id, article_id)
+  }
+}
+
+Table news_article_tags {
+  article_id bigint [pk, not null]
+  tag_id bigint [pk, not null]
+  Indexes {
+    (tag_id, article_id)
+  }
+}
+
+Table news_article_media {
+  id bigint [pk, increment, not null]
+  article_id bigint [not null]
+  media_type varchar(20) [not null, default: 'image']
+  role varchar(24) [not null, default: 'inline']
+  original_url text [not null]
+  asset_uid char(36)
+  alt_text varchar(800)
+  caption text
+  credit varchar(320)
+  mime_type varchar(120)
+  width_px int
+  height_px int
+  sort_order int [not null, default: 0]
+  metadata_json json
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (article_id, sort_order)
+    (asset_uid)
+  }
+}
+
+Table news_article_securities {
+  article_id bigint [pk, not null]
+  security_uid char(36) [pk, not null]
+  symbol_at_publication varchar(24)
+  relation_type varchar(24) [not null, default: 'mentioned']
+  is_primary boolean [not null, default: false]
+  match_method varchar(32) [not null, default: 'manual']
+  match_confidence decimal(5,4)
+  matched_alias varchar(320)
+  evidence_text text
+  review_status varchar(16) [not null, default: 'pending']
+  Indexes {
+    (security_uid, article_id)
+    (review_status, match_confidence)
+  }
+}
+
+Table news_article_content_blocks {
+  id bigint [pk, increment, not null]
+  article_id bigint [not null]
+  block_order int [not null]
+  block_type varchar(24) [not null]
+  text_content longtext
+  media_id bigint
+  table_payload_json json
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (article_id, block_order) [unique]
+    (media_id)
+  }
+}
+
+Ref: news_categories.parent_id > news_categories.id
+Ref: news_authors.publisher_id > news_publishers.id
+Ref: news_articles.publisher_id > news_publishers.id
+Ref: news_article_publications.article_id > news_articles.id
+Ref: news_article_publications.publisher_id > news_publishers.id
+Ref: news_article_contents.article_id > news_articles.id
+Ref: news_article_authors.article_id > news_articles.id
+Ref: news_article_authors.author_id > news_authors.id
+Ref: news_article_categories.article_id > news_articles.id
+Ref: news_article_categories.category_id > news_categories.id
+Ref: news_article_tags.article_id > news_articles.id
+Ref: news_article_tags.tag_id > news_tags.id
+Ref: news_article_media.article_id > news_articles.id
+Ref: news_article_securities.article_id > news_articles.id
+Ref: news_article_content_blocks.article_id > news_articles.id
+Ref: news_article_content_blocks.media_id > news_article_media.id

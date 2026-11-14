@@ -1,0 +1,77 @@
+Project finsights_assets {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Object-storage metadata; object bytes remain in OCI Object Storage.'
+}
+
+Table asset_buckets {
+  id bigint [pk, increment, not null]
+  bucket_uid char(36) [not null, unique]
+  code varchar(64) [not null, unique]
+  provider varchar(28) [not null, default: 'oci_object_storage']
+  tenancy_alias varchar(80) [not null]
+  region_code varchar(60) [not null]
+  namespace_name varchar(180) [not null]
+  bucket_name varchar(200) [not null]
+  bucket_role varchar(24) [not null]
+  default_storage_class varchar(32) [not null, default: 'Standard']
+  is_public boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (tenancy_alias, region_code, namespace_name, bucket_name) [unique]
+  }
+}
+
+Table assets {
+  id bigint [pk, increment, not null]
+  asset_uid char(36) [not null, unique]
+  owner_domain varchar(24) [not null]
+  asset_kind varchar(28) [not null]
+  display_name varchar(500)
+  original_filename varchar(500)
+  source_url text
+  rights_status varchar(24) [not null, default: 'unknown']
+  metadata_json json
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (owner_domain, asset_kind, created_at)
+  }
+}
+
+Table asset_files {
+  id bigint [pk, increment, not null]
+  asset_id bigint [not null]
+  bucket_id bigint [not null]
+  object_key varchar(1024) [not null]
+  object_key_sha256 char(64) [not null]
+  storage_role varchar(24) [not null]
+  mime_type varchar(150) [not null]
+  size_bytes bigint [not null]
+  content_sha256 char(64)
+  etag varchar(255)
+  object_version_id varchar(255)
+  storage_class varchar(32) [not null, default: 'Standard']
+  width_px int
+  height_px int
+  object_status varchar(24) [not null, default: 'available']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  deleted_at datetime
+  Indexes {
+    (bucket_id, object_key_sha256) [unique]
+    (asset_id, storage_role)
+    (asset_id, bucket_id)
+    (content_sha256, size_bytes)
+  }
+}
+
+Table asset_variants {
+  original_asset_id bigint [pk, not null]
+  variant_asset_id bigint [not null, unique]
+  variant_code varchar(40) [not null]
+}
+
+Ref: asset_files.asset_id > assets.id
+Ref: asset_files.bucket_id > asset_buckets.id
+Ref: asset_variants.original_asset_id > assets.id
+Ref: asset_variants.variant_asset_id > assets.id

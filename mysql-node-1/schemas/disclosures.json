@@ -1,0 +1,412 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "issuer_disclosures",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "disclosure_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_item_id",
+          "type": "varchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "company_uid",
+          "type": "char(36)",
+          "nullable": false
+        },
+        {
+          "name": "security_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "disclosure_kind",
+          "type": "varchar(36)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar(600)",
+          "nullable": false
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "language_code",
+          "type": "varchar(8)",
+          "nullable": false,
+          "default": "vi"
+        },
+        {
+          "name": "published_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "original_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "canonical_url_sha256",
+          "type": "char(64)",
+          "nullable": true,
+          "unique": true
+        },
+        {
+          "name": "document_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "source_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "mime_type",
+          "type": "varchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "rights_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "link_only"
+        },
+        {
+          "name": "record_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "published"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_code",
+            "source_item_id"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "company_uid",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "security_uid",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "disclosure_kind",
+            "published_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "corporate_actions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "action_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_item_id",
+          "type": "varchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "company_uid",
+          "type": "char(36)",
+          "nullable": false
+        },
+        {
+          "name": "security_uid",
+          "type": "char(36)",
+          "nullable": false
+        },
+        {
+          "name": "action_type",
+          "type": "varchar(36)",
+          "nullable": false
+        },
+        {
+          "name": "announcement_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "ex_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "record_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "cash_per_share_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "ratio_numerator",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "ratio_denominator",
+          "type": "decimal(20,6)",
+          "nullable": true
+        },
+        {
+          "name": "subscription_price_vnd",
+          "type": "decimal(20,4)",
+          "nullable": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "disclosure_id",
+          "type": "bigint",
+          "nullable": true,
+          "references": {
+            "table": "issuer_disclosures",
+            "column": "id",
+            "on_delete": "SET NULL"
+          }
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_code",
+            "source_item_id"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "security_uid",
+            "ex_date"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "action_type",
+            "record_date"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "regulatory_notices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "notice_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_item_id",
+          "type": "varchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "authority_name",
+          "type": "varchar(180)",
+          "nullable": false
+        },
+        {
+          "name": "notice_kind",
+          "type": "varchar(36)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar(600)",
+          "nullable": false
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "company_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "published_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "effective_date",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "original_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "canonical_url_sha256",
+          "type": "char(64)",
+          "nullable": true,
+          "unique": true
+        },
+        {
+          "name": "document_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "rights_status",
+          "type": "varchar(24)",
+          "nullable": false,
+          "default": "link_only"
+        },
+        {
+          "name": "metadata_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_code",
+            "source_item_id"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "authority_name",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "company_uid",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "notice_kind",
+            "effective_date"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

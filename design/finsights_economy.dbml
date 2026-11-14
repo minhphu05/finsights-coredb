@@ -1,0 +1,67 @@
+Project finsights_economy {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Macroeconomic series and versioned observations.'
+}
+
+Table economic_sources {
+  id bigint [pk, increment, not null]
+  source_code varchar(64) [not null, unique]
+  display_name varchar(180) [not null]
+  source_kind varchar(24) [not null]
+  base_url varchar(1000)
+  terms_url varchar(1000)
+  timezone varchar(48) [not null, default: 'Asia/Ho_Chi_Minh']
+  is_active boolean [not null, default: true]
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+}
+
+Table economic_series {
+  id bigint [pk, increment, not null]
+  series_uid char(36) [not null, unique]
+  source_id bigint [not null]
+  series_code varchar(160) [not null]
+  name_vi varchar(320) [not null]
+  name_en varchar(320)
+  topic_code varchar(48) [not null]
+  geography_code varchar(48) [not null, default: 'VN']
+  frequency_code varchar(20) [not null]
+  unit_code varchar(32) [not null]
+  seasonal_adjustment varchar(20)
+  currency char(3)
+  start_date date
+  end_date date
+  is_active boolean [not null, default: true]
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_id, series_code) [unique]
+    (topic_code, geography_code)
+    (is_active, frequency_code)
+  }
+}
+
+Table economic_observations {
+  id bigint [pk, increment, not null]
+  series_id bigint [not null]
+  reference_period_start date [not null]
+  reference_period_end date [not null]
+  value_decimal decimal(30,6)
+  raw_value_text varchar(255)
+  released_at datetime(3)
+  source_updated_at datetime(3)
+  revision_no smallint [not null, default: 1]
+  is_current boolean [not null, default: true]
+  metadata_json json
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (series_id, reference_period_start, revision_no) [unique]
+    (series_id, reference_period_end)
+    (released_at)
+  }
+}
+
+Ref: economic_series.source_id > economic_sources.id
+Ref: economic_observations.series_id > economic_series.id

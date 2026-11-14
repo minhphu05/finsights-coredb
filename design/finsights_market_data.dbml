@@ -1,0 +1,346 @@
+Project finsights_market_data {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Canonical market reference data, provider observations, prices, and quote history.'
+}
+
+Table market_exchanges {
+  id smallint [pk, increment, not null]
+  code varchar(20) [not null, unique]
+  name varchar(180) [not null]
+  timezone varchar(60) [not null, default: 'Asia/Ho_Chi_Minh']
+  currency char(3) [not null, default: 'VND']
+  website_url varchar(1000)
+  is_active boolean [not null, default: true]
+}
+
+Table market_industries {
+  id bigint [pk, increment, not null]
+  parent_id bigint
+  taxonomy varchar(24) [not null]
+  code varchar(48) [not null]
+  name_vi varchar(220) [not null]
+  name_en varchar(220)
+  level_no smallint [not null, default: 1]
+  Indexes {
+    (taxonomy, code) [unique]
+  }
+}
+
+Table market_companies {
+  id bigint [pk, increment, not null]
+  company_uid char(36) [not null, unique]
+  legal_name varchar(320) [not null]
+  short_name varchar(220)
+  english_name varchar(320)
+  tax_code varchar(48) [unique]
+  industry_id bigint
+  website_url varchar(1000)
+  logo_image_url text
+  logo_asset_uid char(36)
+  address text
+  description text
+  founded_date date
+  status varchar(24) [not null, default: 'active']
+  metadata_json json
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (industry_id, status)
+  }
+}
+
+Table market_securities {
+  id bigint [pk, increment, not null]
+  security_uid char(36) [not null, unique]
+  company_id bigint
+  exchange_id smallint [not null]
+  symbol varchar(24) [not null]
+  name varchar(320)
+  security_type varchar(24) [not null, default: 'stock']
+  isin varchar(32)
+  currency char(3) [not null, default: 'VND']
+  listing_date date
+  delisting_date date
+  outstanding_shares decimal(24,0)
+  free_float_shares decimal(24,0)
+  trading_status varchar(24) [not null, default: 'listed']
+  metadata_json json
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (exchange_id)
+    (exchange_id, symbol) [unique]
+    (company_id, trading_status)
+    (isin)
+  }
+}
+
+Table market_security_aliases {
+  id bigint [pk, increment, not null]
+  security_id bigint [not null]
+  alias_text varchar(320) [not null]
+  alias_normalized varchar(320) [not null]
+  alias_type varchar(32) [not null]
+  language_code varchar(8) [not null, default: 'vi']
+  match_mode varchar(20) [not null, default: 'phrase']
+  requires_financial_context boolean [not null, default: true]
+  confidence decimal(5,4) [not null, default: 1.0]
+  effective_from date
+  effective_to date
+  is_active boolean [not null, default: true]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (alias_normalized, is_active)
+    (security_id, alias_type, is_active)
+    (effective_from, effective_to)
+  }
+}
+
+Table market_security_symbol_history {
+  id bigint [pk, increment, not null]
+  security_id bigint [not null]
+  exchange_id smallint [not null]
+  symbol varchar(24) [not null]
+  effective_from date [not null]
+  effective_to date
+  change_reason varchar(300)
+  Indexes {
+    (security_id, effective_from) [unique]
+    (exchange_id, symbol, effective_from)
+  }
+}
+
+Table market_indices {
+  id bigint [pk, increment, not null]
+  code varchar(36) [not null, unique]
+  name varchar(200) [not null]
+  exchange_id smallint
+  base_date date
+  base_points decimal(20,6)
+  currency char(3) [not null, default: 'VND']
+  is_active boolean [not null, default: true]
+}
+
+Table market_universes {
+  id bigint [pk, increment, not null]
+  code varchar(48) [not null, unique]
+  name varchar(200) [not null]
+  universe_kind varchar(24) [not null]
+  index_id bigint
+  exchange_id smallint
+  description text
+  methodology_url text
+  is_active boolean [not null, default: true]
+}
+
+Table market_universe_memberships {
+  id bigint [pk, increment, not null]
+  universe_id bigint [not null]
+  security_id bigint [not null]
+  effective_from date [not null]
+  effective_to date
+  weight_percent decimal(12,8)
+  Indexes {
+    (universe_id, security_id, effective_from) [unique]
+    (universe_id, effective_to)
+    (security_id, effective_from)
+  }
+}
+
+Table market_providers {
+  id bigint [pk, increment, not null]
+  code varchar(64) [not null, unique]
+  name varchar(200) [not null]
+  homepage_url varchar(1000)
+  data_license varchar(28) [not null, default: 'review_required']
+  attribution_text varchar(500)
+  is_active boolean [not null, default: true]
+}
+
+Table market_index_snapshots {
+  index_id bigint [pk, not null]
+  provider_id bigint [pk, not null]
+  observed_at datetime(3) [pk, not null]
+  index_value decimal(20,6)
+  change_points decimal(20,6)
+  change_percent decimal(12,6)
+  total_volume bigint
+  turnover_vnd decimal(30,2)
+  raw_fields_json json
+  captured_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (observed_at, index_id)
+  }
+}
+
+Table market_index_prices_daily {
+  id bigint [pk, increment, not null]
+  index_id bigint [not null]
+  trading_date date [not null]
+  open_points decimal(20,6)
+  high_points decimal(20,6)
+  low_points decimal(20,6)
+  close_points decimal(20,6) [not null]
+  change_points decimal(20,6)
+  change_percent decimal(12,6)
+  total_volume bigint
+  turnover_vnd decimal(30,2)
+  provider_id bigint
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (index_id, trading_date) [unique]
+    (trading_date, index_id)
+  }
+}
+
+Table market_quotes_latest {
+  security_id bigint [pk, not null]
+  quote_at datetime [not null]
+  last_price_vnd decimal(20,4)
+  reference_price_vnd decimal(20,4)
+  ceiling_price_vnd decimal(20,4)
+  floor_price_vnd decimal(20,4)
+  change_vnd decimal(20,4)
+  change_percent decimal(12,6)
+  total_volume bigint
+  total_turnover_vnd decimal(30,2)
+  best_bid_price_vnd decimal(20,4)
+  best_bid_volume bigint
+  best_ask_price_vnd decimal(20,4)
+  best_ask_volume bigint
+  market_state varchar(24)
+  is_delayed boolean [not null, default: true]
+  provider_id bigint
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (quote_at)
+  }
+}
+
+Table market_quote_snapshots {
+  security_id bigint [pk, not null]
+  provider_id bigint [pk, not null]
+  quoted_at datetime(3) [pk, not null]
+  reference_price_vnd decimal(20,4)
+  ceiling_price_vnd decimal(20,4)
+  floor_price_vnd decimal(20,4)
+  bid_price_1_vnd decimal(20,4)
+  bid_volume_1 bigint
+  bid_price_2_vnd decimal(20,4)
+  bid_volume_2 bigint
+  bid_price_3_vnd decimal(20,4)
+  bid_volume_3 bigint
+  last_price_vnd decimal(20,4)
+  matched_volume bigint
+  change_vnd decimal(20,4)
+  change_percent decimal(12,6)
+  ask_price_1_vnd decimal(20,4)
+  ask_volume_1 bigint
+  ask_price_2_vnd decimal(20,4)
+  ask_volume_2 bigint
+  ask_price_3_vnd decimal(20,4)
+  ask_volume_3 bigint
+  total_volume bigint
+  high_price_vnd decimal(20,4)
+  low_price_vnd decimal(20,4)
+  average_price_vnd decimal(20,4)
+  foreign_buy_volume bigint
+  foreign_sell_volume bigint
+  total_turnover_vnd decimal(30,2)
+  market_state varchar(24)
+  is_delayed boolean
+  raw_fields_json json
+  captured_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (quoted_at, security_id)
+    (provider_id, quoted_at)
+  }
+}
+
+Table market_prices_daily {
+  id bigint [pk, increment, not null]
+  security_id bigint [not null]
+  trading_date date [not null]
+  open_vnd decimal(20,4)
+  high_vnd decimal(20,4)
+  low_vnd decimal(20,4)
+  close_vnd decimal(20,4) [not null]
+  adjusted_close_vnd decimal(20,4)
+  reference_vnd decimal(20,4)
+  ceiling_vnd decimal(20,4)
+  floor_vnd decimal(20,4)
+  change_percent decimal(12,6)
+  matched_volume bigint
+  turnover_vnd decimal(30,2)
+  foreign_buy_volume bigint
+  foreign_sell_volume bigint
+  is_final boolean [not null, default: false]
+  provider_id bigint
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (security_id, trading_date) [unique]
+    (trading_date, security_id)
+  }
+}
+
+Table market_valuations_daily {
+  id bigint [pk, increment, not null]
+  security_id bigint [not null]
+  trading_date date [not null]
+  market_cap_vnd decimal(30,2)
+  pe_ttm decimal(20,6)
+  pb decimal(20,6)
+  eps_ttm_vnd decimal(20,4)
+  book_value_per_share_vnd decimal(20,4)
+  dividend_yield_percent decimal(12,6)
+  provider_id bigint
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (security_id, trading_date) [unique]
+    (trading_date, security_id)
+  }
+}
+
+Table market_intraday_datasets {
+  id bigint [pk, increment, not null]
+  security_id bigint [not null]
+  trading_date date [not null]
+  interval_code varchar(12) [not null]
+  asset_uid char(36) [not null, unique]
+  first_observation_at datetime
+  last_observation_at datetime
+  row_count bigint
+  provider_id bigint
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  Indexes {
+    (security_id, trading_date, interval_code)
+    (trading_date, interval_code)
+  }
+}
+
+Ref: market_industries.parent_id > market_industries.id
+Ref: market_companies.industry_id > market_industries.id
+Ref: market_securities.company_id > market_companies.id
+Ref: market_securities.exchange_id > market_exchanges.id
+Ref: market_security_aliases.security_id > market_securities.id
+Ref: market_security_symbol_history.security_id > market_securities.id
+Ref: market_security_symbol_history.exchange_id > market_exchanges.id
+Ref: market_indices.exchange_id > market_exchanges.id
+Ref: market_universes.index_id > market_indices.id
+Ref: market_universes.exchange_id > market_exchanges.id
+Ref: market_universe_memberships.universe_id > market_universes.id
+Ref: market_universe_memberships.security_id > market_securities.id
+Ref: market_index_snapshots.index_id > market_indices.id
+Ref: market_index_snapshots.provider_id > market_providers.id
+Ref: market_index_prices_daily.index_id > market_indices.id
+Ref: market_index_prices_daily.provider_id > market_providers.id
+Ref: market_quotes_latest.security_id > market_securities.id
+Ref: market_quotes_latest.provider_id > market_providers.id
+Ref: market_quote_snapshots.security_id > market_securities.id
+Ref: market_quote_snapshots.provider_id > market_providers.id
+Ref: market_prices_daily.security_id > market_securities.id
+Ref: market_prices_daily.provider_id > market_providers.id
+Ref: market_valuations_daily.security_id > market_securities.id
+Ref: market_valuations_daily.provider_id > market_providers.id
+Ref: market_intraday_datasets.security_id > market_securities.id
+Ref: market_intraday_datasets.provider_id > market_providers.id

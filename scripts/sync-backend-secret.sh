@@ -6,8 +6,8 @@ set -euo pipefail
 : "${FINSIGHTS_VPS_USER:?FINSIGHTS_VPS_USER is required}"
 : "${FINSIGHTS_VPS_SSH_KEY:?FINSIGHTS_VPS_SSH_KEY is required}"
 : "${FINSIGHTS_VPS_KNOWN_HOSTS:?FINSIGHTS_VPS_KNOWN_HOSTS is required}"
-: "${MYSQL_NODE_1_HOST:?MYSQL_NODE_1_HOST is required}"
-: "${MYSQL_NODE_1_PORT:?MYSQL_NODE_1_PORT is required}"
+: "${MYSQL_NODE_2_HOST:?MYSQL_NODE_2_HOST is required}"
+: "${MYSQL_NODE_2_PORT:?MYSQL_NODE_2_PORT is required}"
 : "${MYSQL_AUTH_APP_PASSWORD:?MYSQL_AUTH_APP_PASSWORD is required}"
 : "${MYSQL_USER_APP_PASSWORD:?MYSQL_USER_APP_PASSWORD is required}"
 : "${MYSQL_MARKET_APP_PASSWORD:?MYSQL_MARKET_APP_PASSWORD is required}"
@@ -26,8 +26,8 @@ import json
 import os
 from pathlib import Path
 
-host = os.environ["MYSQL_NODE_1_HOST"]
-port = os.environ["MYSQL_NODE_1_PORT"]
+host = os.environ["MYSQL_NODE_2_HOST"]
+port = os.environ["MYSQL_NODE_2_PORT"]
 accounts = {
     "AUTH_MYSQL_DSN": ("finsights_auth_app", "MYSQL_AUTH_APP_PASSWORD", "finsights_auth"),
     "USER_MYSQL_DSN": ("finsights_user_app", "MYSQL_USER_APP_PASSWORD", "finsights_user"),

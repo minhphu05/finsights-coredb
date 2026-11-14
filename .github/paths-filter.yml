@@ -10,7 +10,6 @@ mysql_node_1:
   - "coredb/**"
   - "requirements.txt"
   - "scripts/remote-apply.sh"
-  - "scripts/sync-backend-secret.sh"
   - ".github/workflows/**"
   - ".github/paths-filter.yml"
 mysql_node_2:
@@ -18,5 +17,6 @@ mysql_node_2:
   - "coredb/**"
   - "requirements.txt"
   - "scripts/remote-apply.sh"
+  - "scripts/sync-backend-secret.sh"
   - ".github/workflows/**"
   - ".github/paths-filter.yml"

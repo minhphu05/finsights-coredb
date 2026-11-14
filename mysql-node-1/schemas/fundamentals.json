@@ -1,0 +1,393 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "financial_metrics",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "metric_code",
+          "type": "varchar(90)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "canonical_name_vi",
+          "type": "varchar(220)",
+          "nullable": false
+        },
+        {
+          "name": "canonical_name_en",
+          "type": "varchar(220)",
+          "nullable": true
+        },
+        {
+          "name": "statement_family",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "metric_group",
+          "type": "varchar(28)",
+          "nullable": false
+        },
+        {
+          "name": "unit_code",
+          "type": "varchar(28)",
+          "nullable": false
+        },
+        {
+          "name": "value_kind",
+          "type": "varchar(20)",
+          "nullable": false,
+          "default": "amount"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "financial_periods",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "period_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "company_uid",
+          "type": "char(36)",
+          "nullable": false
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_company_id",
+          "type": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "period_code",
+          "type": "varchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "fiscal_year",
+          "type": "smallint",
+          "nullable": false
+        },
+        {
+          "name": "fiscal_quarter",
+          "type": "tinyint",
+          "nullable": true
+        },
+        {
+          "name": "period_type",
+          "type": "varchar(16)",
+          "nullable": false
+        },
+        {
+          "name": "statement_scope",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "period_start",
+          "type": "date",
+          "nullable": true
+        },
+        {
+          "name": "period_end",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "published_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "audit_status",
+          "type": "varchar(28)",
+          "nullable": false,
+          "default": "unknown"
+        },
+        {
+          "name": "currency",
+          "type": "char(3)",
+          "nullable": false,
+          "default": "VND"
+        },
+        {
+          "name": "revision_no",
+          "type": "smallint",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "is_current",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "source_document_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "source_asset_uid",
+          "type": "char(36)",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_code",
+            "source_company_id",
+            "period_code",
+            "statement_scope",
+            "revision_no"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "company_uid",
+            "period_end"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "source_code",
+            "published_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "fiscal_year",
+            "period_type"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "financial_values",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "period_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "financial_periods",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "metric_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "financial_metrics",
+            "column": "id"
+          }
+        },
+        {
+          "name": "line_key",
+          "type": "varchar(120)",
+          "nullable": false
+        },
+        {
+          "name": "source_label",
+          "type": "varchar(320)",
+          "nullable": true
+        },
+        {
+          "name": "value_decimal",
+          "type": "decimal(30,6)",
+          "nullable": true
+        },
+        {
+          "name": "original_value_decimal",
+          "type": "decimal(30,6)",
+          "nullable": true
+        },
+        {
+          "name": "reported_unit",
+          "type": "varchar(32)",
+          "nullable": true
+        },
+        {
+          "name": "unit_multiplier",
+          "type": "decimal(18,6)",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "source_currency",
+          "type": "char(3)",
+          "nullable": true
+        },
+        {
+          "name": "row_order",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "raw_fields_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "period_id",
+            "line_key"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "metric_id",
+            "period_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "financial_metric_mappings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "source_code",
+          "type": "varchar(64)",
+          "nullable": false
+        },
+        {
+          "name": "source_metric_code",
+          "type": "varchar(120)",
+          "nullable": true
+        },
+        {
+          "name": "source_label",
+          "type": "varchar(320)",
+          "nullable": false
+        },
+        {
+          "name": "metric_id",
+          "type": "bigint",
+          "nullable": false,
+          "references": {
+            "table": "financial_metrics",
+            "column": "id"
+          }
+        },
+        {
+          "name": "unit_multiplier",
+          "type": "decimal(18,6)",
+          "nullable": false,
+          "default": 1
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "source_code",
+            "source_label"
+          ],
+          "unique": true
+        },
+        {
+          "columns": [
+            "source_code",
+            "source_metric_code"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

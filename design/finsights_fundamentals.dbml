@@ -1,0 +1,87 @@
+Project finsights_fundamentals {
+  database_type: 'MySQL'
+  Note: 'Node 1 · Financial statement periods, revisions, metrics, and values.'
+}
+
+Table financial_metrics {
+  id bigint [pk, increment, not null]
+  metric_code varchar(90) [not null, unique]
+  canonical_name_vi varchar(220) [not null]
+  canonical_name_en varchar(220)
+  statement_family varchar(24) [not null]
+  metric_group varchar(28) [not null]
+  unit_code varchar(28) [not null]
+  value_kind varchar(20) [not null, default: 'amount']
+  description text
+  is_active boolean [not null, default: true]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+}
+
+Table financial_periods {
+  id bigint [pk, increment, not null]
+  period_uid char(36) [not null, unique]
+  company_uid char(36) [not null]
+  source_code varchar(64) [not null]
+  source_company_id varchar(200) [not null]
+  period_code varchar(20) [not null]
+  fiscal_year smallint [not null]
+  fiscal_quarter tinyint
+  period_type varchar(16) [not null]
+  statement_scope varchar(24) [not null]
+  period_start date
+  period_end date [not null]
+  published_at datetime(3)
+  audit_status varchar(28) [not null, default: 'unknown']
+  currency char(3) [not null, default: 'VND']
+  revision_no smallint [not null, default: 1]
+  is_current boolean [not null, default: true]
+  source_document_uid char(36)
+  source_asset_uid char(36)
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_code, source_company_id, period_code, statement_scope, revision_no) [unique]
+    (company_uid, period_end)
+    (source_code, published_at)
+    (fiscal_year, period_type)
+  }
+}
+
+Table financial_values {
+  id bigint [pk, increment, not null]
+  period_id bigint [not null]
+  metric_id bigint [not null]
+  line_key varchar(120) [not null]
+  source_label varchar(320)
+  value_decimal decimal(30,6)
+  original_value_decimal decimal(30,6)
+  reported_unit varchar(32)
+  unit_multiplier decimal(18,6) [not null, default: 1]
+  source_currency char(3)
+  row_order int
+  raw_fields_json json
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (period_id, line_key) [unique]
+    (metric_id, period_id)
+  }
+}
+
+Table financial_metric_mappings {
+  id bigint [pk, increment, not null]
+  source_code varchar(64) [not null]
+  source_metric_code varchar(120)
+  source_label varchar(320) [not null]
+  metric_id bigint [not null]
+  unit_multiplier decimal(18,6) [not null, default: 1]
+  is_active boolean [not null, default: true]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (source_code, source_label) [unique]
+    (source_code, source_metric_code)
+  }
+}
+
+Ref: financial_values.period_id > financial_periods.id
+Ref: financial_values.metric_id > financial_metrics.id
+Ref: financial_metric_mappings.metric_id > financial_metrics.id

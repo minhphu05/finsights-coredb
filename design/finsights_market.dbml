@@ -1,0 +1,81 @@
+Project finsights_market {
+  database_type: 'MySQL'
+  Note: 'Node 2 · Backend MarketService read model, including API-facing news projections.'
+}
+
+Table instruments {
+  symbol varchar(24) [pk, not null]
+  name varchar(320) [not null]
+  short_name varchar(220)
+  sector varchar(180)
+  exchange varchar(20) [not null]
+  market_cap decimal(30,2)
+  Indexes {
+    (exchange, symbol)
+  }
+}
+
+Table stock_quotes {
+  id bigint [pk, increment, not null]
+  symbol varchar(24) [not null]
+  price decimal(20,4)
+  change_percent decimal(12,6)
+  volume bigint
+  quoted_at datetime(3) [not null]
+  Indexes {
+    (symbol, quoted_at)
+  }
+}
+
+Table stock_candles {
+  id bigint [pk, increment, not null]
+  symbol varchar(24) [not null]
+  candle_at datetime(3) [not null]
+  open_price decimal(20,4)
+  high_price decimal(20,4)
+  low_price decimal(20,4)
+  close_price decimal(20,4)
+  volume bigint
+  Indexes {
+    (symbol, candle_at) [unique]
+  }
+}
+
+Table market_indices {
+  symbol varchar(24) [unique]
+  value decimal(20,6)
+  change_value decimal(20,6)
+  change_percent decimal(12,6)
+  exchange varchar(20)
+  volume bigint
+  quoted_at datetime(3)
+}
+
+Table news_articles {
+  id bigint [pk, increment, not null]
+  slug varchar(360) [not null, unique]
+  title varchar(800) [not null]
+  description text
+  category varchar(180)
+  image_url text
+  source_name varchar(220)
+  source_url text
+  published_at datetime(3)
+  body_markdown longtext
+  Indexes {
+    (published_at)
+  }
+}
+
+Table news_article_symbols {
+  article_id bigint [pk, not null]
+  symbol varchar(24) [pk, not null]
+  Indexes {
+    (symbol, article_id)
+  }
+}
+
+Ref: stock_quotes.symbol > instruments.symbol
+Ref: stock_candles.symbol > instruments.symbol
+Ref: news_article_symbols.article_id > news_articles.id
+Ref: news_article_symbols.symbol > instruments.symbol
