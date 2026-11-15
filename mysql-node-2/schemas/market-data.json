@@ -899,7 +899,7 @@
         {
           "name": "provider_id",
           "type": "bigint",
-          "nullable": true,
+          "nullable": false,
           "references": {
             "table": "market_providers",
             "column": "id"
@@ -916,9 +916,17 @@
         {
           "columns": [
             "index_id",
+            "provider_id",
             "trading_date"
           ],
           "unique": true
+        },
+        {
+          "columns": [
+            "index_id",
+            "trading_date"
+          ],
+          "unique": false
         },
         {
           "columns": [
@@ -1021,7 +1029,7 @@
         {
           "name": "provider_id",
           "type": "bigint",
-          "nullable": true,
+          "nullable": false,
           "references": {
             "table": "market_providers",
             "column": "id"
@@ -1340,7 +1348,7 @@
         {
           "name": "provider_id",
           "type": "bigint",
-          "nullable": true,
+          "nullable": false,
           "references": {
             "table": "market_providers",
             "column": "id"
@@ -1357,9 +1365,17 @@
         {
           "columns": [
             "security_id",
+            "provider_id",
             "trading_date"
           ],
           "unique": true
+        },
+        {
+          "columns": [
+            "security_id",
+            "trading_date"
+          ],
+          "unique": false
         },
         {
           "columns": [
@@ -1427,7 +1443,7 @@
         {
           "name": "provider_id",
           "type": "bigint",
-          "nullable": true,
+          "nullable": false,
           "references": {
             "table": "market_providers",
             "column": "id"
@@ -1444,9 +1460,17 @@
         {
           "columns": [
             "security_id",
+            "provider_id",
             "trading_date"
           ],
           "unique": true
+        },
+        {
+          "columns": [
+            "security_id",
+            "trading_date"
+          ],
+          "unique": false
         },
         {
           "columns": [
@@ -1510,7 +1534,7 @@
         {
           "name": "provider_id",
           "type": "bigint",
-          "nullable": true,
+          "nullable": false,
           "references": {
             "table": "market_providers",
             "column": "id"
@@ -1524,6 +1548,15 @@
         }
       ],
       "indexes": [
+        {
+          "columns": [
+            "security_id",
+            "provider_id",
+            "trading_date",
+            "interval_code"
+          ],
+          "unique": true
+        },
         {
           "columns": [
             "security_id",

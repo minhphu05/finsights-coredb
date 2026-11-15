@@ -1,6 +1,6 @@
 Project finsights_news {
   database_type: 'MySQL'
-  Note: 'Node 1 · Canonical financial-news metadata, ordered content, authors, media, and security matches.'
+  Note: 'Node 2 · Canonical backend financial-news metadata, ordered content, authors, media, and security matches.'
 }
 
 Table news_publishers {

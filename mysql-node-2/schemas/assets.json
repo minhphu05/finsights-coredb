@@ -68,9 +68,9 @@
     {
       "name": "asset_variants",
       "columns": [
-        {"name": "original_asset_id", "type": "bigint", "nullable": false, "primary_key": true, "references": {"table": "assets", "column": "id"}},
+        {"name": "original_asset_id", "type": "bigint", "nullable": false, "references": {"table": "assets", "column": "id"}},
         {"name": "variant_asset_id", "type": "bigint", "nullable": false, "unique": true, "references": {"table": "assets", "column": "id"}},
-        {"name": "variant_code", "type": "varchar(40)", "nullable": false}
+        {"name": "variant_code", "type": "varchar(40)", "nullable": false, "primary_key": true}
       ],
       "indexes": []
     }

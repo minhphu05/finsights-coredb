@@ -1,6 +1,6 @@
 Project finsights_disclosures {
   database_type: 'MySQL'
-  Note: 'Node 1 · Issuer filings, corporate actions, and regulator notices.'
+  Note: 'Node 2 · Backend issuer filings, corporate actions, and regulator notices.'
 }
 
 Table issuer_disclosures {

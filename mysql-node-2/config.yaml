@@ -22,9 +22,30 @@ databases:
   - name: finsights_auth
     schemas:
       - schemas/auth.json
+  - name: finsights_assets
+    schemas:
+      - schemas/assets.json
+  - name: finsights_disclosures
+    schemas:
+      - schemas/disclosures.json
+  - name: finsights_economy
+    schemas:
+      - schemas/economy.json
+  - name: finsights_fundamentals
+    schemas:
+      - schemas/fundamentals.json
   - name: finsights_market
     schemas:
       - schemas/backend-market.json
+  - name: finsights_market_data
+    schemas:
+      - schemas/market-data.json
+  - name: finsights_news
+    schemas:
+      - schemas/news.json
+  - name: finsights_scraping
+    schemas:
+      - schemas/scraping.json
   - name: finsights_user
     schemas:
       - schemas/user.json
@@ -34,10 +55,45 @@ users:
     password_env: MYSQL_AUTH_APP_PASSWORD
     database: finsights_auth
     privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_assets_app
+    host: "%"
+    password_env: MYSQL_ASSETS_APP_PASSWORD
+    database: finsights_assets
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_disclosures_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_disclosures
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_economy_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_economy
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_fundamentals_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_fundamentals
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
   - name: finsights_market_app
     host: "%"
     password_env: MYSQL_MARKET_APP_PASSWORD
     database: finsights_market
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_market_data_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_market_data
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_news_app
+    host: "%"
+    password_env: MYSQL_NEWS_APP_PASSWORD
+    database: finsights_news
+    privileges: [SELECT, INSERT, UPDATE, DELETE]
+  - name: finsights_scraping_app
+    host: "%"
+    password_env: MYSQL_SCRAPING_APP_PASSWORD
+    database: finsights_scraping
     privileges: [SELECT, INSERT, UPDATE, DELETE]
   - name: finsights_user_app
     host: "%"

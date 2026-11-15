@@ -5,6 +5,7 @@ Project finsights_market {
 
 Table instruments {
   symbol varchar(24) [pk, not null]
+  security_uid char(36) [not null, unique]
   name varchar(320) [not null]
   short_name varchar(220)
   sector varchar(180)
@@ -42,7 +43,8 @@ Table stock_candles {
 }
 
 Table market_indices {
-  symbol varchar(24) [unique]
+  symbol varchar(24) [pk, not null]
+  name varchar(200) [not null]
   value decimal(20,6)
   change_value decimal(20,6)
   change_percent decimal(12,6)
@@ -53,6 +55,7 @@ Table market_indices {
 
 Table news_articles {
   id bigint [pk, increment, not null]
+  article_uid char(36) [not null, unique]
   slug varchar(360) [not null, unique]
   title varchar(800) [not null]
   description text

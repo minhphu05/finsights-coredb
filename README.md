@@ -6,28 +6,28 @@
 
 | Node | Server | Purpose | Managed databases |
 |---|---|---|---|
-| Node 1 | OCI MySQL Tokyo | AI chat history and canonical collection data | `finsights_ai`, `finsights_assets`, `finsights_disclosures`, `finsights_economy`, `finsights_fundamentals`, `finsights_market_data`, `finsights_news`, `finsights_scraping` |
-| Node 2 | OCI MySQL Singapore | Backend-owned service databases and API read model | `finsights_auth`, `finsights_market`, `finsights_user` |
+| Node 1 | OCI MySQL Tokyo | AI-service-owned data only | `finsights_ai` (existing schema stays unchanged) |
+| Node 2 | OCI MySQL Singapore | All backend APIs, collection, canonical financial data, assets, and operational history | `finsights_auth`, `finsights_user`, `finsights_market`, `finsights_market_data`, `finsights_news`, `finsights_fundamentals`, `finsights_disclosures`, `finsights_economy`, `finsights_assets`, `finsights_scraping` |
 
-The database split keeps each data domain separate. Node 1 owns source data and collection history; Node 2 owns backend account/profile state and the market API read model. `finsights_ai` remains unchanged on Node 1. Oracle Autonomous Database continues to hold RAG chunks and embeddings.
+Every database used by backend services or backend-operated collectors belongs to Node 2. Node 1 is reserved for AI services; its existing `finsights_ai` schema is not changed in this design. Oracle Autonomous Database continues to hold RAG chunks and embeddings.
 
 ## Database boundaries
 
 | Database | Node | Contents |
 |---|---:|---|
-| `finsights_ai` | 1 | AI chat sessions and messages; user IDs are logical references. |
-| `finsights_assets` | 1 | Object-storage bucket, object, variant, rights, and checksum metadata; bytes stay in OCI Object Storage. |
-| `finsights_disclosures` | 1 | Issuer filings, corporate actions, and regulator notices. |
-| `finsights_economy` | 1 | Macroeconomic time series and versioned observations. |
-| `finsights_fundamentals` | 1 | Statement periods/revisions, financial metrics, reported values, and source-label mappings. |
-| `finsights_market_data` | 1 | Canonical exchanges, securities, aliases, providers, prices, quotes, indexes, and market history from collectors. |
-| `finsights_news` | 1 | Canonical publisher, article, content, author, media, and security-association data. |
-| `finsights_scraping` | 1 | Source registry, scrape runs/items, fetch attempts, and checkpoints. This is audit/retry history, not a content store. |
+| `finsights_ai` | 1 | Existing AI chat sessions and messages; user IDs are logical references. Unchanged. |
 | `finsights_auth` | 2 | Backend authentication accounts and transactional outbox. |
+| `finsights_user` | 2 | Backend profiles and watchlists; `account_id` is a logical reference to Auth. |
 | `finsights_market` | 2 | MarketService API read model (`instruments`, quotes, candles, indexes, and the API-facing news projection). |
-| `finsights_user` | 2 | Backend profiles and watchlists. |
+| `finsights_market_data` | 2 | Canonical exchanges, companies, securities, aliases, providers, quotes, prices, indexes, and market history. |
+| `finsights_news` | 2 | Canonical publishers, articles, content, authors, media, rights, and security matches. |
+| `finsights_fundamentals` | 2 | Statement periods/revisions, metric catalog, reported values, and source-label mappings. |
+| `finsights_disclosures` | 2 | Issuer filings, corporate actions, and regulator notices. |
+| `finsights_economy` | 2 | Macroeconomic sources, time series, and versioned observations. |
+| `finsights_assets` | 2 | Object-storage buckets, objects, variants, rights, and checksums; bytes stay in OCI Object Storage. |
+| `finsights_scraping` | 2 | Source registry, scrape runs/items, fetch attempts, checkpoints, retries, and collection audit history. |
 
-`finsights_market_data` and `finsights_market` are intentionally separate. The former stores canonical collection data; the latter is the backend-facing model consumed by MarketService. `finsights_news` is canonical article storage. MarketService's smaller news projection belongs in Node 2. CoreDB does not replicate data or create cross-node foreign keys. A projection/transfer process must publish the needed canonical market rows from Node 1 into Node 2; news writes currently need the same separation. Keep stable logical IDs such as `company_uid`, `security_uid`, `article_uid`, and `asset_uid` across databases.
+Keep canonical data separate from the API read model while placing both on Node 2: `finsights_market_data` and `finsights_news` hold collector-owned records, while `finsights_market` keeps the existing MarketService contract. A publisher can materialize canonical market/news records into that read model on the same MySQL node. CoreDB creates structures and users; it does not copy rows between databases. Keep stable logical IDs such as `company_uid`, `security_uid`, `article_uid`, and `asset_uid` across databases. IDs crossing database boundaries remain application-level references so each app account can stay scoped to its own database.
 
 ## Schemas and DBML
 
@@ -52,33 +52,40 @@ PostgreSQL is reserved for platform tools. CoreDB provisions `dagster` with the 
 
 GitHub Actions runs `.github/workflows/reconcile.yml`. Changes under one MySQL node folder reconcile that node; `workflow_dispatch` runs all targets. The MySQL jobs run over the Finsights VPS because the GitHub runner cannot reach the MySQL allowlist directly.
 
-Both manifests set `drop_missing_databases` and `drop_missing_users` to `true`. CoreDB therefore removes `finsights_` databases/users that are not declared on that node, then creates the desired databases and schemas. MySQL and HeatWave system schemas are outside the `finsights_` managed scope.
+Node 2 manages the full backend `finsights_` set and removes undeclared managed databases/users. Node 1 temporarily has `drop_missing_databases: false` and `drop_missing_users: false`: its target manifest contains only `finsights_ai`, but legacy backend databases/users are left untouched until data migration and cleanup are explicitly planned. This protects any rows still on Node 1; CoreDB schema reconciliation does not move table data. MySQL and HeatWave system schemas are outside the `finsights_` managed scope.
 
 The MySQL administrator account `finsightsadmin` is not managed by CoreDB. Admin credentials and app passwords are kept in GitHub Actions secrets or local ignored `.env` files. MySQL app accounts require TLS. CA files are public trust anchors; each endpoint certificate uses `MySQL_Endpoint_Server` as its verified identity.
 
 The workflow uses GitHub Environments `coredb-postgres`, `coredb-mysql-node-1`, and `coredb-mysql-node-2` to scope deployment settings.
 
-## Backend connection mapping
+## Service and collection account mapping
 
-| Backend setting | Database | App account | Node |
+| Workload | Database | App account | Node |
 |---|---|---|---:|
-| `AUTH_MYSQL_DSN` | `finsights_auth` | `finsights_auth_app` | 2 |
-| `USER_MYSQL_DSN` | `finsights_user` | `finsights_user_app` | 2 |
-| `MARKET_MYSQL_DSN` | `finsights_market` | `finsights_market_app` | 2 |
+| AuthService | `finsights_auth` | `finsights_auth_app` | 2 |
+| UserService | `finsights_user` | `finsights_user_app` | 2 |
+| MarketService API read model | `finsights_market` | `finsights_market_app` | 2 |
+| Asset metadata | `finsights_assets` | `finsights_assets_app` | 2 |
+| News collection and canonical articles | `finsights_news` | `finsights_news_app` | 2 |
+| Fundamentals collection | `finsights_fundamentals` | `finsights_fundamentals_app` | 2 |
+| Disclosure collection | `finsights_disclosures` | `finsights_disclosures_app` | 2 |
+| Economic data collection | `finsights_economy` | `finsights_economy_app` | 2 |
+| Market data collection | `finsights_market_data` | `finsights_market_data_app` | 2 |
+| Scraper run and fetch history | `finsights_scraping` | `finsights_scraping_app` | 2 |
 | AI chat-history connection | `finsights_ai` | `finsights_ai_app` | 1 |
 
-Collection workers write audit and canonical source data to Node 1 using the Node 1 CA. The workflow refreshes the three backend MySQL DSNs in the Kubernetes Secret `finsights-backend-secrets` after Node 2 is reconciled, while preserving JWT and RabbitMQ values.
+Backend collection workers write audit and canonical data to Node 2 using the Node 2 CA. AI chat history uses Node 1 and its CA. The workflow refreshes the three backend MySQL DSNs in the Kubernetes Secret `finsights-backend-secrets` after Node 2 is reconciled, while preserving JWT and RabbitMQ values.
 
 ## GitHub Actions secrets
 
 Create these repository secrets with the exact names:
 
 - PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`.
-- Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
-- Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`.
+- Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`.
+- Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
 - SSH: `FINSIGHTS_VPS_SSH_KEY`, `FINSIGHTS_VPS_KNOWN_HOSTS`.
 
-The existing `MYSQL_SCRAPING_APP_PASSWORD` is reused for the planned Node 1 collector accounts for fundamentals, disclosures, economy, and market data until those domains receive dedicated runtime credentials. No password value is stored in this repository.
+The existing `MYSQL_SCRAPING_APP_PASSWORD` is reused for the Node 2 collection accounts for fundamentals, disclosures, economy, market data, and scraping until those domains receive dedicated runtime credentials. No password value is stored in this repository.
 
 ## Local use
 

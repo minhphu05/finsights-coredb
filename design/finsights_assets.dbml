@@ -1,6 +1,6 @@
 Project finsights_assets {
   database_type: 'MySQL'
-  Note: 'Node 1 · Object-storage metadata; object bytes remain in OCI Object Storage.'
+  Note: 'Node 2 · Backend object-storage metadata; object bytes remain in OCI Object Storage.'
 }
 
 Table asset_buckets {
@@ -68,7 +68,7 @@ Table asset_files {
 Table asset_variants {
   original_asset_id bigint [pk, not null]
   variant_asset_id bigint [not null, unique]
-  variant_code varchar(40) [not null]
+  variant_code varchar(40) [pk, not null]
 }
 
 Ref: asset_files.asset_id > assets.id

@@ -11,6 +11,12 @@
           "primary_key": true
         },
         {
+          "name": "security_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
           "name": "name",
           "type": "varchar(320)",
           "nullable": false
@@ -162,8 +168,13 @@
         {
           "name": "symbol",
           "type": "varchar(24)",
-          "nullable": true,
-          "unique": true
+          "nullable": false,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false
         },
         {
           "name": "value",
@@ -207,6 +218,12 @@
           "nullable": false,
           "primary_key": true,
           "autoincrement": true
+        },
+        {
+          "name": "article_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
         },
         {
           "name": "slug",

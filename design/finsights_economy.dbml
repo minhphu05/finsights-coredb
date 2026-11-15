@@ -1,6 +1,6 @@
 Project finsights_economy {
   database_type: 'MySQL'
-  Note: 'Node 1 · Macroeconomic series and versioned observations.'
+  Note: 'Node 2 · Backend macroeconomic series and versioned observations.'
 }
 
 Table economic_sources {

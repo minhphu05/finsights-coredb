@@ -1,6 +1,6 @@
 Project finsights_market_data {
   database_type: 'MySQL'
-  Note: 'Node 1 · Canonical market reference data, provider observations, prices, and quote history.'
+  Note: 'Node 2 · Canonical backend market reference data, provider observations, prices, and quote history.'
 }
 
 Table market_exchanges {
@@ -185,10 +185,11 @@ Table market_index_prices_daily {
   change_percent decimal(12,6)
   total_volume bigint
   turnover_vnd decimal(30,2)
-  provider_id bigint
+  provider_id bigint [not null]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   Indexes {
-    (index_id, trading_date) [unique]
+    (index_id, provider_id, trading_date) [unique]
+    (index_id, trading_date)
     (trading_date, index_id)
   }
 }
@@ -210,7 +211,7 @@ Table market_quotes_latest {
   best_ask_volume bigint
   market_state varchar(24)
   is_delayed boolean [not null, default: true]
-  provider_id bigint
+  provider_id bigint [not null]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   Indexes {
     (quote_at)
@@ -275,10 +276,11 @@ Table market_prices_daily {
   foreign_buy_volume bigint
   foreign_sell_volume bigint
   is_final boolean [not null, default: false]
-  provider_id bigint
+  provider_id bigint [not null]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   Indexes {
-    (security_id, trading_date) [unique]
+    (security_id, provider_id, trading_date) [unique]
+    (security_id, trading_date)
     (trading_date, security_id)
   }
 }
@@ -293,10 +295,11 @@ Table market_valuations_daily {
   eps_ttm_vnd decimal(20,4)
   book_value_per_share_vnd decimal(20,4)
   dividend_yield_percent decimal(12,6)
-  provider_id bigint
+  provider_id bigint [not null]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   Indexes {
-    (security_id, trading_date) [unique]
+    (security_id, provider_id, trading_date) [unique]
+    (security_id, trading_date)
     (trading_date, security_id)
   }
 }
@@ -310,9 +313,10 @@ Table market_intraday_datasets {
   first_observation_at datetime
   last_observation_at datetime
   row_count bigint
-  provider_id bigint
+  provider_id bigint [not null]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   Indexes {
+    (security_id, provider_id, trading_date, interval_code) [unique]
     (security_id, trading_date, interval_code)
     (trading_date, interval_code)
   }
