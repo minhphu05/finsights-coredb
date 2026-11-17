@@ -62,6 +62,7 @@ users:
     privileges: [SELECT, INSERT, UPDATE, DELETE]
   - name: finsights_disclosures_app
     host: "%"
+    # The disclosure collector reuses the Node 2 collection credential until this domain has a dedicated secret.
     password_env: MYSQL_SCRAPING_APP_PASSWORD
     database: finsights_disclosures
     privileges: [SELECT, INSERT, UPDATE, DELETE]
