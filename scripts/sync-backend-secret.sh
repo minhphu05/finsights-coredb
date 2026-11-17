@@ -11,6 +11,8 @@ set -euo pipefail
 : "${MYSQL_AUTH_APP_PASSWORD:?MYSQL_AUTH_APP_PASSWORD is required}"
 : "${MYSQL_USER_APP_PASSWORD:?MYSQL_USER_APP_PASSWORD is required}"
 : "${MYSQL_MARKET_APP_PASSWORD:?MYSQL_MARKET_APP_PASSWORD is required}"
+: "${MYSQL_NEWS_APP_PASSWORD:?MYSQL_NEWS_APP_PASSWORD is required}"
+: "${MYSQL_SCRAPING_APP_PASSWORD:?MYSQL_SCRAPING_APP_PASSWORD is required}"
 
 work_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/backend-secret-sync.XXXXXX")"
 chmod 700 "$work_dir"
@@ -21,6 +23,7 @@ printf '%s\n' "$FINSIGHTS_VPS_KNOWN_HOSTS" > "$work_dir/known_hosts"
 chmod 600 "$work_dir/id_key" "$work_dir/known_hosts"
 
 export COREDB_SECRET_PAYLOAD="$work_dir/backend-credentials.json"
+export COREDB_PIPELINE_SECRET_PAYLOAD="$work_dir/pipeline-credentials.json"
 python3 - <<'PY'
 import json
 import os
@@ -44,6 +47,13 @@ for key, (username, password_key, database) in accounts.items():
 payload = Path(os.environ["COREDB_SECRET_PAYLOAD"])
 payload.write_text(json.dumps(dsns), encoding="utf-8")
 payload.chmod(0o600)
+
+pipeline_payload = Path(os.environ["COREDB_PIPELINE_SECRET_PAYLOAD"])
+pipeline_payload.write_text(json.dumps({
+    "MYSQL_NEWS_APP_PASSWORD": os.environ["MYSQL_NEWS_APP_PASSWORD"],
+    "MYSQL_SCRAPING_APP_PASSWORD": os.environ["MYSQL_SCRAPING_APP_PASSWORD"],
+}), encoding="utf-8")
+pipeline_payload.chmod(0o600)
 PY
 
 remote="${FINSIGHTS_VPS_USER}@${FINSIGHTS_VPS_HOST}"
@@ -52,12 +62,13 @@ ssh_opts=(-i "$work_dir/id_key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o
 scp_opts=(-i "$work_dir/id_key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$work_dir/known_hosts" -P "$FINSIGHTS_VPS_PORT")
 
 ssh "${ssh_opts[@]}" "$remote" "umask 077 && mkdir -p '$remote_dir'"
-scp "${scp_opts[@]}" "$COREDB_SECRET_PAYLOAD" "$remote:$remote_dir/backend-credentials.json"
+scp "${scp_opts[@]}" "$COREDB_SECRET_PAYLOAD" "$COREDB_PIPELINE_SECRET_PAYLOAD" "$remote:$remote_dir/"
 ssh "${ssh_opts[@]}" "$remote" bash -s -- "$remote_dir" <<'REMOTE'
 set -euo pipefail
 remote_dir="$1"
 trap 'rm -rf "$remote_dir"' EXIT
 chmod 600 "$remote_dir/backend-credentials.json"
+chmod 600 "$remote_dir/pipeline-credentials.json"
 
 python3 - "$remote_dir/backend-credentials.json" <<'PY' | kubectl apply -f -
 import base64
@@ -98,4 +109,34 @@ kubectl -n finsights-platform rollout restart \
 kubectl -n finsights-platform rollout status deployment/finsights-backend-auth-service --timeout=180s
 kubectl -n finsights-platform rollout status deployment/finsights-backend-user-service --timeout=180s
 kubectl -n finsights-platform rollout status deployment/finsights-backend-market-service --timeout=180s
+
+python3 - "$remote_dir/pipeline-credentials.json" <<'PY' | kubectl apply -f -
+import base64
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+name = "dagster-pipeline-secrets"
+namespace = "orchestration"
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+existing = json.loads(subprocess.check_output([
+    "kubectl", "-n", namespace, "get", "secret", name, "-o", "json"
+], text=True))
+data = dict(existing.get("data", {}))
+for key, value in payload.items():
+    data[key] = base64.b64encode(value.encode("utf-8")).decode("ascii")
+old_metadata = existing.get("metadata", {})
+metadata = {key: old_metadata[key] for key in ("name", "namespace", "labels", "annotations") if key in old_metadata}
+secret = {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": metadata,
+    "type": existing.get("type", "Opaque"),
+    "data": data,
+}
+print(json.dumps(secret))
+PY
+kubectl -n orchestration rollout restart deployment/dagster-dagster-user-deployments-finsights-data-scraping
+kubectl -n orchestration rollout status deployment/dagster-dagster-user-deployments-finsights-data-scraping --timeout=240s
 REMOTE
