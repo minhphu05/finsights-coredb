@@ -135,6 +135,16 @@
           "nullable": true
         },
         {
+          "name": "turn",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "ai_trace",
+          "type": "json",
+          "nullable": true
+        },
+        {
           "name": "created_at",
           "type": "datetime(3)",
           "nullable": false,
@@ -148,6 +158,14 @@
             "created_at"
           ],
           "unique": false
+        },
+        {
+          "columns": [
+            "session_id",
+            "turn",
+            "speaker"
+          ],
+          "unique": true
         }
       ]
     }
