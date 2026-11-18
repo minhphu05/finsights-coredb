@@ -39,4 +39,15 @@ Table chat_messages {
   }
 }
 
+Table chat_usage {
+  id bigint [pk, increment, not null]
+  user_uid char(36) [not null, unique]
+  window_started_at datetime(3) [not null, note: 'Start of the current 5-hour quota window (first turn after the previous one ended)']
+  window_tokens bigint [not null, default: 0]
+  week_started_at datetime(3) [not null, note: 'Start of the current 7-day quota window']
+  week_tokens bigint [not null, default: 0]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Note: 'Per-user token quota of the AI service; tokens are cache-weighted (see finsights-ai-service docs)'
+}
+
 Ref: chat_messages.session_id > chat_sessions.id

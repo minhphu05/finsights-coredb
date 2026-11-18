@@ -168,6 +168,52 @@
           "unique": true
         }
       ]
+    },
+    {
+      "name": "chat_usage",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "user_uid",
+          "type": "char(36)",
+          "nullable": false,
+          "unique": true
+        },
+        {
+          "name": "window_started_at",
+          "type": "datetime(3)",
+          "nullable": false
+        },
+        {
+          "name": "window_tokens",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "week_started_at",
+          "type": "datetime(3)",
+          "nullable": false
+        },
+        {
+          "name": "week_tokens",
+          "type": "bigint",
+          "nullable": false,
+          "default": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ]
     }
   ]
 }
