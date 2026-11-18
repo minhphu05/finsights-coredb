@@ -30,9 +30,12 @@ Table chat_messages {
   prompt_tokens int
   completion_tokens int
   error_code varchar(64)
+  turn int [note: 'Turn number within the session; one user and one assistant row per turn']
+  ai_trace json [note: 'AI service data for the turn: digest, tool_calls, verified, unsupported, latency_ms']
   created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
   Indexes {
     (session_id, created_at)
+    (session_id, turn, speaker) [unique]
   }
 }
 
