@@ -10,6 +10,20 @@ Table accounts {
   created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
 }
 
+Table auth_google_identities {
+  id bigint [pk, increment, not null]
+  provider varchar(32) [not null, default: 'google']
+  provider_subject varchar(255) [not null]
+  account_id bigint [not null, ref: > accounts.id]
+  email varchar(254) [not null]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (provider, provider_subject) [unique]
+    (account_id, provider) [unique]
+    (email)
+  }
+}
+
 Table outbox_events {
   id bigint [pk, increment, not null]
   event_id varchar(64) [not null, unique]

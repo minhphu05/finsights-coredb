@@ -35,6 +35,10 @@ accounts = {
     "AUTH_MYSQL_DSN": ("finsights_auth_app", "MYSQL_AUTH_APP_PASSWORD", "finsights_auth"),
     "USER_MYSQL_DSN": ("finsights_user_app", "MYSQL_USER_APP_PASSWORD", "finsights_user"),
     "MARKET_MYSQL_DSN": ("finsights_market_app", "MYSQL_MARKET_APP_PASSWORD", "finsights_market"),
+    "MARKET_DATA_MYSQL_DSN": ("finsights_market_data_app", "MYSQL_SCRAPING_APP_PASSWORD", "finsights_market_data"),
+    "NEWS_MYSQL_DSN": ("finsights_news_app", "MYSQL_NEWS_APP_PASSWORD", "finsights_news"),
+    "FUNDAMENTALS_MYSQL_DSN": ("finsights_fundamentals_app", "MYSQL_SCRAPING_APP_PASSWORD", "finsights_fundamentals"),
+    "DISCLOSURES_MYSQL_DSN": ("finsights_disclosures_app", "MYSQL_SCRAPING_APP_PASSWORD", "finsights_disclosures"),
 }
 
 dsns = {}
