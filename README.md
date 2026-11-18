@@ -72,6 +72,7 @@ The workflow uses GitHub Environments `coredb-postgres`, `coredb-mysql-node-1`, 
 | Economic data collection | `finsights_economy` | `finsights_economy_app` | 2 |
 | Market data collection | `finsights_market_data` | `finsights_market_data_app` | 2 |
 | Scraper run and fetch history | `finsights_scraping` | `finsights_scraping_app` | 2 |
+| AI agent news reads (read-only) | `finsights_news` | `finsights_ai_ro` | 2 |
 | AI chat-history connection | `finsights_ai` | `finsights_ai_app` | 1 |
 
 Backend collection workers write audit and canonical data to Node 2 using the Node 2 CA. AI chat history uses Node 1 and its CA. The workflow refreshes the three backend MySQL DSNs in the Kubernetes Secret `finsights-backend-secrets` after Node 2 is reconciled, while preserving JWT and RabbitMQ values.
@@ -82,7 +83,7 @@ Create these repository secrets with the exact names:
 
 - PostgreSQL: `POSTGRES_ADMIN_PASSWORD`, `DAGSTER_DB_PASSWORD`.
 - Node 1: `MYSQL_NODE_1_ADMIN_PASSWORD`, `MYSQL_AI_APP_PASSWORD`.
-- Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`.
+- Node 2: `MYSQL_NODE_2_ADMIN_PASSWORD`, `MYSQL_AUTH_APP_PASSWORD`, `MYSQL_USER_APP_PASSWORD`, `MYSQL_MARKET_APP_PASSWORD`, `MYSQL_ASSETS_APP_PASSWORD`, `MYSQL_NEWS_APP_PASSWORD`, `MYSQL_SCRAPING_APP_PASSWORD`, `MYSQL_AI_RO_PASSWORD`.
 - SSH: `FINSIGHTS_VPS_SSH_KEY`, `FINSIGHTS_VPS_KNOWN_HOSTS`.
 
 The existing `MYSQL_SCRAPING_APP_PASSWORD` is reused for the Node 2 collection accounts for fundamentals, disclosures, economy, market data, and scraping until those domains receive dedicated runtime credentials. No password value is stored in this repository.

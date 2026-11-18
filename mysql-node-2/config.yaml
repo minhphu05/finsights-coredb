@@ -101,3 +101,9 @@ users:
     password_env: MYSQL_USER_APP_PASSWORD
     database: finsights_user
     privileges: [SELECT, INSERT, UPDATE, DELETE]
+  # finsights-ai-service reads published news for its agent tools; read-only.
+  - name: finsights_ai_ro
+    host: "%"
+    password_env: MYSQL_AI_RO_PASSWORD
+    database: finsights_news
+    privileges: [SELECT]
