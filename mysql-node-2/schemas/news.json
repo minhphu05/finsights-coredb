@@ -876,6 +876,13 @@
         },
         {
           "columns": [
+            "symbol_at_publication",
+            "article_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
             "review_status",
             "match_confidence"
           ],

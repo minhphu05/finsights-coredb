@@ -184,6 +184,7 @@ Table news_article_securities {
   review_status varchar(16) [not null, default: 'pending']
   Indexes {
     (security_uid, article_id)
+    (symbol_at_publication, article_id)
     (review_status, match_confidence)
   }
 }
