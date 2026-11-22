@@ -967,6 +967,131 @@
           "unique": false
         }
       ]
+    },
+    {
+      "name": "news_article_quality",
+      "columns": [
+        {
+          "name": "article_id",
+          "type": "bigint",
+          "nullable": false,
+          "primary_key": true,
+          "references": {
+            "table": "news_articles",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        {
+          "name": "financial_relevance",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "topic_label",
+          "type": "varchar(80)",
+          "nullable": false
+        },
+        {
+          "name": "publication_decision",
+          "type": "varchar(24)",
+          "nullable": false
+        },
+        {
+          "name": "confidence",
+          "type": "decimal(5,4)",
+          "nullable": true
+        },
+        {
+          "name": "reason_code",
+          "type": "varchar(80)",
+          "nullable": false
+        },
+        {
+          "name": "evidence_json",
+          "type": "json",
+          "nullable": true
+        },
+        {
+          "name": "ruleset_version",
+          "type": "varchar(40)",
+          "nullable": false
+        },
+        {
+          "name": "assessed_by",
+          "type": "varchar(120)",
+          "nullable": false,
+          "default": "scraper_quality_gate"
+        },
+        {
+          "name": "last_run_id",
+          "type": "varchar(64)",
+          "nullable": true
+        },
+        {
+          "name": "review_status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "default": "automatic"
+        },
+        {
+          "name": "manual_label",
+          "type": "varchar(24)",
+          "nullable": true
+        },
+        {
+          "name": "reviewed_by",
+          "type": "varchar(120)",
+          "nullable": true
+        },
+        {
+          "name": "reviewed_at",
+          "type": "datetime(3)",
+          "nullable": true
+        },
+        {
+          "name": "assessed_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime(3)",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(3)"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "financial_relevance",
+            "topic_label",
+            "article_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "publication_decision",
+            "assessed_at"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "ruleset_version",
+            "assessed_at"
+          ],
+          "unique": false
+        }
+      ]
     }
   ]
 }

@@ -205,6 +205,31 @@ Table news_article_content_blocks {
   }
 }
 
+Table news_article_quality {
+  article_id bigint [pk, not null]
+  financial_relevance varchar(24) [not null]
+  topic_label varchar(80) [not null]
+  publication_decision varchar(24) [not null]
+  confidence decimal(5,4)
+  reason_code varchar(80) [not null]
+  evidence_json json
+  ruleset_version varchar(40) [not null]
+  assessed_by varchar(120) [not null, default: 'scraper_quality_gate']
+  last_run_id varchar(64)
+  review_status varchar(16) [not null, default: 'automatic']
+  manual_label varchar(24)
+  reviewed_by varchar(120)
+  reviewed_at datetime(3)
+  assessed_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  Indexes {
+    (financial_relevance, topic_label, article_id)
+    (publication_decision, assessed_at)
+    (ruleset_version, assessed_at)
+  }
+}
+
 Ref: news_categories.parent_id > news_categories.id
 Ref: news_authors.publisher_id > news_publishers.id
 Ref: news_articles.publisher_id > news_publishers.id
@@ -221,3 +246,4 @@ Ref: news_article_media.article_id > news_articles.id
 Ref: news_article_securities.article_id > news_articles.id
 Ref: news_article_content_blocks.article_id > news_articles.id
 Ref: news_article_content_blocks.media_id > news_article_media.id
+Ref: news_article_quality.article_id > news_articles.id
