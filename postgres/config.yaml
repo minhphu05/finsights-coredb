@@ -27,6 +27,13 @@ databases:
       - vector
     schemas:
       - schemas/news_embeddings.json
+  - name: finsights_embeddings_qwen
+    owner: postgres
+    drop_missing_tables: false
+    extensions:
+      - vector
+    schemas:
+      - schemas/news_embeddings.json
 users:
   - name: dagster_admin
     password_env: DAGSTER_DB_PASSWORD
@@ -40,6 +47,7 @@ users:
     password_env: FINSIGHTS_EMBEDDINGS_DB_PASSWORD
     databases:
       - finsights_embeddings
+      - finsights_embeddings_qwen
     privileges:
       - CONNECT
       - TEMPORARY
