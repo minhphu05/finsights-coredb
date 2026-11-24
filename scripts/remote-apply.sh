@@ -7,14 +7,14 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$target" in
   postgres)
     secret_keys="POSTGRES_ADMIN_PASSWORD,DAGSTER_DB_PASSWORD"
-    optional_keys="POSTGRES_HOST,POSTGRES_PORT"
+    optional_keys="POSTGRES_HOST,POSTGRES_PORT,FINSIGHTS_EMBEDDINGS_DB_PASSWORD"
     ;;
   mysql-node-1)
     secret_keys="MYSQL_NODE_1_ADMIN_PASSWORD,MYSQL_AI_APP_PASSWORD"
     optional_keys=""
     ;;
   mysql-node-2)
-    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_AUTH_APP_PASSWORD,MYSQL_USER_APP_PASSWORD,MYSQL_MARKET_APP_PASSWORD,MYSQL_ASSETS_APP_PASSWORD,MYSQL_NEWS_APP_PASSWORD,MYSQL_SCRAPING_APP_PASSWORD,MYSQL_AI_RO_PASSWORD"
+    secret_keys="MYSQL_NODE_2_ADMIN_PASSWORD,MYSQL_AUTH_APP_PASSWORD,MYSQL_USER_APP_PASSWORD,MYSQL_MARKET_APP_PASSWORD,MYSQL_ASSETS_APP_PASSWORD,MYSQL_NEWS_APP_PASSWORD,MYSQL_SCRAPING_APP_PASSWORD"
     optional_keys=""
     ;;
   *)
@@ -85,7 +85,93 @@ if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
 fi
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check --quiet -r requirements.txt
+if [[ "$target" == "mysql-node-2" ]]; then
+  .venv/bin/python - "$remote_dir/secrets.json" <<'PY'
+import base64
+import json
+import secrets
+import subprocess
+import sys
+from pathlib import Path
+
+secrets_path = Path(sys.argv[1])
+payload = json.loads(secrets_path.read_text(encoding="utf-8"))
+result = subprocess.run(
+    ["kubectl", "-n", "orchestration", "get", "secret", "dagster-pipeline-secrets", "-o", "json"],
+    check=False,
+    capture_output=True,
+    text=True,
+)
+password = None
+if result.returncode == 0:
+    existing = json.loads(result.stdout)
+    encoded = existing.get("data", {}).get("MYSQL_AI_RO_PASSWORD")
+    if encoded:
+        password = base64.b64decode(encoded).decode("utf-8")
+if not password:
+    password = secrets.token_urlsafe(48)
+payload["MYSQL_AI_RO_PASSWORD"] = password
+secrets_path.write_text(json.dumps(payload), encoding="utf-8")
+secrets_path.chmod(0o600)
+PY
+fi
+if [[ "$target" == "postgres" ]]; then
+  .venv/bin/python - "$remote_dir/secrets.json" <<'PY'
+import base64
+import json
+import secrets
+import subprocess
+import sys
+from pathlib import Path
+
+secrets_path = Path(sys.argv[1])
+payload = json.loads(secrets_path.read_text(encoding="utf-8"))
+password = payload.get("FINSIGHTS_EMBEDDINGS_DB_PASSWORD")
+if not password:
+    result = subprocess.run(
+        ["kubectl", "-n", "orchestration", "get", "secret", "finsights-embeddings-postgresql-secret", "-o", "json"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        existing = json.loads(result.stdout)
+        encoded = existing.get("data", {}).get("POSTGRES_EMBEDDINGS_PASSWORD")
+        if encoded:
+            password = base64.b64decode(encoded).decode("utf-8")
+if not password:
+    password = secrets.token_urlsafe(48)
+payload["FINSIGHTS_EMBEDDINGS_DB_PASSWORD"] = password
+secrets_path.write_text(json.dumps(payload), encoding="utf-8")
+secrets_path.chmod(0o600)
+PY
+fi
 .venv/bin/python -m coredb.cli apply --target "$target" --secrets-file "$remote_dir/secrets.json"
+if [[ "$target" == "mysql-node-2" ]]; then
+  .venv/bin/python - "$remote_dir/secrets.json" <<'PY' | kubectl -n orchestration apply -f -
+import base64
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+existing = json.loads(subprocess.check_output([
+    "kubectl", "-n", "orchestration", "get", "secret", "dagster-pipeline-secrets", "-o", "json"
+], text=True))
+data = dict(existing.get("data", {}))
+data["MYSQL_AI_RO_PASSWORD"] = base64.b64encode(payload["MYSQL_AI_RO_PASSWORD"].encode("utf-8")).decode("ascii")
+old_metadata = existing.get("metadata", {})
+metadata = {key: old_metadata[key] for key in ("name", "namespace", "labels", "annotations") if key in old_metadata}
+print(json.dumps({
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": metadata,
+    "type": existing.get("type", "Opaque"),
+    "data": data,
+}))
+PY
+fi
 if [[ "$target" == "postgres" ]]; then
   secret_path="$remote_dir/dagster-postgresql-password"
   .venv/bin/python - "$remote_dir/secrets.json" "$secret_path" <<'PY'
@@ -104,5 +190,21 @@ PY
     --from-file=postgresql-password="$secret_path" \
     --dry-run=client -o yaml | kubectl apply -f -
   rm -f "$secret_path"
+
+  embeddings_secret_path="$remote_dir/finsights-embeddings-password"
+  .venv/bin/python - "$remote_dir/secrets.json" "$embeddings_secret_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+secrets = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+secret_path = Path(sys.argv[2])
+secret_path.write_text(secrets["FINSIGHTS_EMBEDDINGS_DB_PASSWORD"], encoding="utf-8")
+secret_path.chmod(0o600)
+PY
+  kubectl -n orchestration create secret generic finsights-embeddings-postgresql-secret \
+    --from-file=POSTGRES_EMBEDDINGS_PASSWORD="$embeddings_secret_path" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  rm -f "$embeddings_secret_path"
 fi
 REMOTE

@@ -339,7 +339,20 @@ def _pg_apply(manifest: dict[str, Any]) -> None:
                                 _pg_identifier(name),
                                 role,
                             ))
-                            _pg_exec(conn, sql.SQL("GRANT USAGE, CREATE ON SCHEMA public TO {}").format(role))
+                            _pg_exec(conn, sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(role))
+                            if "CREATE" in privileges:
+                                _pg_exec(conn, sql.SQL("GRANT CREATE ON SCHEMA public TO {}").format(role))
+
+                    extensions = set(spec.get("extensions", []))
+                    unsupported_extensions = extensions - {"vector"}
+                    if unsupported_extensions:
+                        raise ValueError(f"unsupported PostgreSQL extensions: {sorted(unsupported_extensions)}")
+                    for extension in sorted(extensions):
+                        LOG.info("Ensuring PostgreSQL extension %s in database %s", extension, name)
+                        _pg_exec(
+                            conn,
+                            sql.SQL("CREATE EXTENSION IF NOT EXISTS {}").format(_pg_identifier(extension)),
+                        )
 
                     owner = _pg_identifier(spec["owner"])
                     for old_owner_name in spec.get("reassign_public_tables_from", []):

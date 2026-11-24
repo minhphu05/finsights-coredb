@@ -31,6 +31,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.dialects.mysql import JSON as MySQLJSON
 from sqlalchemy.dialects.mysql import DATETIME as MySQLDateTime
 from sqlalchemy.dialects.mysql import LONGTEXT, TINYINT
+from pgvector.sqlalchemy import Vector
 
 
 NAMING_CONVENTION = {
@@ -46,12 +47,19 @@ def _sqlalchemy_type(type_name: str, engine_name: str = "mysql", column: dict[st
     column = column or {}
 
     if engine_name == "postgresql":
+        if normalized.startswith("vector("):
+            match = re.fullmatch(r"vector\((\d+)\)", normalized)
+            if not match:
+                raise ValueError(f"invalid pgvector type {type_name!r}")
+            return Vector(int(match.group(1)))
         if normalized == "uuid":
             return PostgreSQLUUID(as_uuid=False)
         if normalized == "text[]":
             return ARRAY(Text())
         if normalized == "jsonb":
             return JSONB()
+        if normalized == "timestamptz":
+            return PostgreSQLTimestamp(timezone=True)
         if normalized == "json":
             return PostgreSQLJSON()
         if normalized == "enum":
@@ -193,7 +201,24 @@ def load_metadata(
             if not index_columns or any(col not in table.c for col in index_columns):
                 raise ValueError(f"invalid index columns on {table_name}: {index_columns}")
             unique = bool(index.get("unique", False))
-            Index(_index_name(table_name, index_columns, unique), *(table.c[col] for col in index_columns), unique=unique)
+            index_kwargs: dict[str, Any] = {"unique": unique}
+            method = index.get("method")
+            operator_class = index.get("operator_class")
+            if method:
+                if engine_name != "postgresql" or method not in {"btree", "gin", "gist", "hnsw", "ivfflat"}:
+                    raise ValueError(f"unsupported index method {method!r} for {engine_name}")
+                index_kwargs["postgresql_using"] = method
+            if operator_class:
+                if engine_name != "postgresql" or len(index_columns) != 1:
+                    raise ValueError("PostgreSQL operator classes require exactly one indexed column")
+                if operator_class not in {"vector_cosine_ops", "vector_l2_ops", "vector_ip_ops"}:
+                    raise ValueError(f"unsupported PostgreSQL operator class {operator_class!r}")
+                index_kwargs["postgresql_ops"] = {index_columns[0]: operator_class}
+            Index(
+                _index_name(table_name, index_columns, unique),
+                *(table.c[col] for col in index_columns),
+                **index_kwargs,
+            )
 
     metadata.sorted_tables
     return metadata

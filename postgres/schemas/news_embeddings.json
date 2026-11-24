@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "news_article_chunks",
+      "columns": [
+        {"name": "id", "type": "bigint", "nullable": false, "primary_key": true, "autoincrement": true},
+        {"name": "article_uid", "type": "varchar(36)", "nullable": false},
+        {"name": "chunk_index", "type": "integer", "nullable": false},
+        {"name": "published_at", "type": "timestamptz", "nullable": false},
+        {"name": "text", "type": "text", "nullable": false},
+        {"name": "embedding", "type": "vector(1024)", "nullable": false},
+        {"name": "embedding_model", "type": "varchar(120)", "nullable": false},
+        {"name": "content_hash", "type": "char(64)", "nullable": false},
+        {"name": "created_at", "type": "timestamptz", "nullable": false, "default": "CURRENT_TIMESTAMP"}
+      ],
+      "indexes": [
+        {"columns": ["article_uid", "chunk_index"], "unique": true},
+        {"columns": ["published_at"]},
+        {"columns": ["embedding_model"]},
+        {"columns": ["embedding"], "method": "hnsw", "operator_class": "vector_cosine_ops"}
+      ]
+    }
+  ]
+}

@@ -56,6 +56,7 @@ pipeline_payload = Path(os.environ["COREDB_PIPELINE_SECRET_PAYLOAD"])
 pipeline_payload.write_text(json.dumps({
     "MYSQL_NEWS_APP_PASSWORD": os.environ["MYSQL_NEWS_APP_PASSWORD"],
     "MYSQL_SCRAPING_APP_PASSWORD": os.environ["MYSQL_SCRAPING_APP_PASSWORD"],
+    **({"NEWS_EMBEDDING_API_KEY": os.environ["NEWS_EMBEDDING_API_KEY"]} if os.environ.get("NEWS_EMBEDDING_API_KEY") else {}),
 }), encoding="utf-8")
 pipeline_payload.chmod(0o600)
 PY
@@ -143,4 +144,6 @@ print(json.dumps(secret))
 PY
 kubectl -n orchestration rollout restart deployment/dagster-dagster-user-deployments-finsights-data-scraping
 kubectl -n orchestration rollout status deployment/dagster-dagster-user-deployments-finsights-data-scraping --timeout=240s
+kubectl -n orchestration rollout restart deployment/dagster-dagster-user-deployments-finsights-ai-pipelines
+kubectl -n orchestration rollout status deployment/dagster-dagster-user-deployments-finsights-ai-pipelines --timeout=240s
 REMOTE
