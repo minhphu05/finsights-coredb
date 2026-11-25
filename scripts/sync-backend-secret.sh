@@ -57,6 +57,7 @@ pipeline_payload.write_text(json.dumps({
     "MYSQL_NEWS_APP_PASSWORD": os.environ["MYSQL_NEWS_APP_PASSWORD"],
     "MYSQL_SCRAPING_APP_PASSWORD": os.environ["MYSQL_SCRAPING_APP_PASSWORD"],
     **({"NEWS_EMBEDDING_API_KEY": os.environ["NEWS_EMBEDDING_API_KEY"]} if os.environ.get("NEWS_EMBEDDING_API_KEY") else {}),
+    **({"DEEPSEEK_API_KEY": os.environ["DEEPSEEK_API_KEY"]} if os.environ.get("DEEPSEEK_API_KEY") else {}),
 }), encoding="utf-8")
 pipeline_payload.chmod(0o600)
 PY

@@ -147,6 +147,39 @@ secrets_path.chmod(0o600)
 PY
 fi
 .venv/bin/python -m coredb.cli apply --target "$target" --secrets-file "$remote_dir/secrets.json"
+if [[ "$target" == "mysql-node-1" ]]; then
+  .venv/bin/python - "$remote_dir/secrets.json" <<'PY' | kubectl -n orchestration apply -f -
+import base64
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+password = payload.get("MYSQL_AI_APP_PASSWORD")
+if not password:
+    raise SystemExit("MYSQL_AI_APP_PASSWORD is required to sync AI chat storage credentials")
+name = "dagster-pipeline-secrets"
+existing = json.loads(subprocess.check_output([
+    "kubectl", "-n", "orchestration", "get", "secret", name, "-o", "json"
+], text=True))
+data = dict(existing.get("data", {}))
+data["MYSQL_AI_APP_PASSWORD"] = base64.b64encode(password.encode("utf-8")).decode("ascii")
+old_metadata = existing.get("metadata", {})
+metadata = {key: old_metadata[key] for key in ("name", "namespace", "labels", "annotations") if key in old_metadata}
+print(json.dumps({
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": metadata,
+    "type": existing.get("type", "Opaque"),
+    "data": data,
+}))
+PY
+  if kubectl -n orchestration get deployment finsights-ai-api >/dev/null 2>&1; then
+    kubectl -n orchestration rollout restart deployment/finsights-ai-api
+    kubectl -n orchestration rollout status deployment/finsights-ai-api --timeout=240s
+  fi
+fi
 if [[ "$target" == "mysql-node-2" ]]; then
   .venv/bin/python - "$remote_dir/secrets.json" <<'PY' | kubectl -n orchestration apply -f -
 import base64
