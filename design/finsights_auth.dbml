@@ -1,6 +1,23 @@
 Project finsights_auth {
   database_type: 'MySQL'
-  Note: 'Node 2 · Backend authentication accounts and transactional outbox.'
+  Note: 'Node 2 · Backend user and admin authentication accounts and transactional outbox.'
+}
+
+Table admin_accounts {
+  id bigint [pk, increment, not null]
+  username varchar(64) [not null, unique]
+  password_hash varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  failed_login_attempts int [not null, default: 0]
+  locked_until datetime(3)
+  last_login_at datetime(3)
+  created_by_admin_id bigint [ref: > admin_accounts.id]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  Indexes {
+    (is_active, username)
+  }
 }
 
 Table accounts {
