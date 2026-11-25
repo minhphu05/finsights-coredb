@@ -147,4 +147,8 @@ kubectl -n orchestration rollout restart deployment/dagster-dagster-user-deploym
 kubectl -n orchestration rollout status deployment/dagster-dagster-user-deployments-finsights-data-scraping --timeout=240s
 kubectl -n orchestration rollout restart deployment/dagster-dagster-user-deployments-finsights-ai-pipelines
 kubectl -n orchestration rollout status deployment/dagster-dagster-user-deployments-finsights-ai-pipelines --timeout=240s
+if kubectl -n orchestration get deployment finsights-ai-api >/dev/null 2>&1; then
+  kubectl -n orchestration rollout restart deployment/finsights-ai-api
+  kubectl -n orchestration rollout status deployment/finsights-ai-api --timeout=240s
+fi
 REMOTE
